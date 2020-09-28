@@ -1,0 +1,9 @@
+<~! def proj_name GeminiLab.Core2.CommandLineParser ~>
+<~! def proj_desc "This library contains the commandline parser." ~>
+<Project Sdk="Microsoft.NET.Sdk">
+  <~~ ref_block csproj_body ~>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GeminiLab.Core2.GetOpt\GeminiLab.Core2.GetOpt.csproj" />
+  </ItemGroup>
+</Project>
