@@ -1,152 +1,222 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
-using GeminiLab.Core2.GetOpt;
+using GeminiLab.Core2.CommandLineParser.Default;
+using GeminiLab.Core2.CommandLineParser.Custom;
 
 namespace GeminiLab.Core2.CommandLineParser {
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
-    public sealed class OptionAttribute : Attribute {
-        public char Option { get; set; } = '\0';
-        public string? LongOption { get; set; } = null;
-    }
+    public class CommandLineParser<T> where T : new() {
+        private class CategoryConfig {
+            public Type    CategoryType  { get; set; }
+            public Type    AttributeType { get; set; }
+            public Type?   ConfigType    { get; set; }
+            public object? Config        { get; set; }
 
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    public sealed class GetOptErrorHandlerAttribute : Attribute {
-        public static bool IsValidErrorHandler(MethodInfo handler) {
-            var para = handler.GetParameters();
-            return para.Length == 2
-                   && !para[0].IsIn && !para[0].IsOut && !para[0].IsLcid && para[0].ParameterType == typeof(GetOptError)
-                   && !para[1].IsIn && !para[1].IsOut && !para[1].IsLcid && para[1].ParameterType == typeof(GetOptResult)
-                ;
+            public IOptionCategoryBase Instance { get; set; }
+            public List<OptionInDest>  Options  { get; set; }
+
+            public CategoryConfig(Type categoryType, Type attributeType, Type? configType, object? config) {
+                CategoryType = categoryType;
+                AttributeType = attributeType;
+                ConfigType = configType;
+                Config = config;
+
+                Instance = null!;
+                Options = null!;
+            }
         }
-    }
 
-    internal class CommandLineParserTypeMetaInfo {
-        public OptGetter Opt;
-        public Dictionary<char, PropertyInfo> ShortOptionTargets;
-        public Dictionary<string, PropertyInfo> LongOptionTargets;
-        public IList<MethodInfo> ErrorHandlers;
-
-        public CommandLineParserTypeMetaInfo(OptGetter opt, Dictionary<char, PropertyInfo> shortOptionTargets, Dictionary<string, PropertyInfo> longOptionTargets, IList<MethodInfo> errorHandlers) {
-            Opt = opt;
-            ShortOptionTargets = shortOptionTargets;
-            LongOptionTargets = longOptionTargets;
-            ErrorHandlers = errorHandlers;
-        }
-    }
-
-    public delegate bool CommandLineParserErrorHandler(GetOptError error, GetOptResult result);
-
-    public static class CommandLineParser<T> {
-        // How to tell analyzers I DO KNOW WHAT I AM DOING??!!
-        // ReSharper disable StaticMemberInGenericType
-        private static readonly object InternalLock = new object();
-        private static CommandLineParserTypeMetaInfo? Info;
-        // ReSharper restore StaticMemberInGenericType
-
-        private static CommandLineParserTypeMetaInfo GenerateOptGetter() {
-            var opt = new OptGetter();
-            var shortOptionTargets = new Dictionary<char, PropertyInfo>();
-            var longOptionTargets = new Dictionary<string, PropertyInfo>();
-
-            var type = typeof(T);
-
-            var props = type.GetProperties(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            foreach (var prop in props) {
-                var propType = prop.PropertyType;
-                OptionType optionType;
-                
-                if (propType == typeof(bool)) {
-                    optionType = OptionType.Switch;
-                } else if (propType == typeof(string)) {
-                    optionType = OptionType.Parameterized;
-                } else if (propType == typeof(string[])) {
-                    optionType = OptionType.MultiParameterized;
-                } else {
-                    continue;
-                }
-
-                foreach (var attr in prop.GetCustomAttributes<OptionAttribute>(true)) {
-                    if (attr.Option != '\0') {
-                        shortOptionTargets[attr.Option] = prop;
-                        opt.AddOption(attr.Option, optionType);
-                    }
-
-                    if (attr.LongOption != null) {
-                        longOptionTargets[attr.LongOption] = prop;
-                        opt.AddOption(attr.LongOption, optionType);
-                    }
-                }
+        private class OptionInDest {
+            public OptionInDest(Attribute attribute, Type actualType, Type attributeType, MemberInfo target) {
+                Attribute = attribute;
+                ActualType = actualType;
+                AttributeType = attributeType;
+                Target = target;
             }
 
-            var handlers = new List<MethodInfo>();
-            var methods = type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            foreach (var method in methods) {
-                if (method.GetCustomAttribute<GetOptErrorHandlerAttribute>() != null) {
-                    if (GetOptErrorHandlerAttribute.IsValidErrorHandler(method)) {
-                        handlers.Add(method);
-                    }
-                }
+            public Attribute  Attribute     { get; set; }
+            public Type       ActualType    { get; set; }
+            public Type       AttributeType { get; set; }
+            public MemberInfo Target        { get; set; }
+        }
+
+
+        private readonly Dictionary<Type, CategoryConfig> _configByCategoryType  = new Dictionary<Type, CategoryConfig>();
+        private readonly Dictionary<Type, CategoryConfig> _configByAttributeType = new Dictionary<Type, CategoryConfig>();
+
+        private bool                      _evaluated = false;
+        private List<IOptionCategoryBase> _categories;
+
+        private void RemoveExistingConfigs(Type categoryType, Type attributeType) {
+            CategoryConfig config;
+            if (_configByCategoryType.TryGetValue(categoryType, out config)) {
+                _configByCategoryType.Remove(categoryType);
+                _configByAttributeType.Remove(config.AttributeType);
             }
 
-            return new CommandLineParserTypeMetaInfo(opt, shortOptionTargets, longOptionTargets, handlers);
+            if (_configByAttributeType.TryGetValue(attributeType, out config)) {
+                _configByAttributeType.Remove(attributeType);
+                _configByCategoryType.Remove(config.CategoryType);
+            }
         }
 
-        public static T Parse(params string[] args) {
-            return Parse(args, null);
+        public CommandLineParser<T> Use<TOptionCategory, TOptionAttribute>()
+            where TOptionCategory : IOptionCategory<TOptionAttribute>, new()
+            where TOptionAttribute : OptionAttribute {
+            _evaluated = false;
+
+            var attributeType = typeof(TOptionAttribute);
+            var categoryType = typeof(TOptionCategory);
+
+            RemoveExistingConfigs(categoryType, attributeType);
+
+            var categoryConfig = new CategoryConfig(categoryType, attributeType, null, null);
+
+            _configByCategoryType[categoryType] = categoryConfig;
+            _configByAttributeType[attributeType] = categoryConfig;
+
+            return this;
         }
 
-        public static T Parse(string[] args, CommandLineParserErrorHandler? errorHandler) {
-            lock (InternalLock) {
-                if (Info == null) Info = GenerateOptGetter();
 
-                Info.Opt.BeginParse(args);
+        public CommandLineParser<T> Use<TOptionCategory, TOptionAttribute, TConfig>(TConfig config)
+            where TOptionCategory : IOptionCategory<TOptionAttribute>, IConfigurable<TConfig>, new()
+            where TOptionAttribute : OptionAttribute {
+            _evaluated = false;
 
-                T rv = Activator.CreateInstance<T>();
+            var attributeType = typeof(TOptionAttribute);
+            var categoryType = typeof(TOptionCategory);
+            var configType = typeof(TConfig);
 
-                GetOptError err;
-                while ((err = Info.Opt.GetOpt(out var result)) != GetOptError.EndOfArguments) {
-                    if (err == GetOptError.NoError) {
-                        PropertyInfo prop;
+            RemoveExistingConfigs(categoryType, attributeType);
 
-                        switch (result.Type) {
-                        case GetOptResultType.ShortOption:
-                        case GetOptResultType.LongAlias:    // not supposed to happen, but handle it anyway
-                            prop = Info.ShortOptionTargets[result.Option];
+            var categoryConfig = new CategoryConfig(categoryType, attributeType, configType, config);
+
+            _configByCategoryType[categoryType] = categoryConfig;
+            _configByAttributeType[attributeType] = categoryConfig;
+
+            return this;
+        }
+        
+        private IList<OptionInDest> ReadOptionsFromMemberInfos(IEnumerable<MemberInfo> memberInfos) {
+            var options = new List<OptionInDest>();
+
+            foreach (var memberInfo in memberInfos) {
+                var attrs = memberInfo.GetCustomAttributes(typeof(OptionAttribute)).ToArray();
+                foreach (var attr in attrs) {
+                    var type = attr.GetType();
+                    var actualType = type;
+
+                    while (type != null && type != typeof(OptionAttribute)) {
+                        if (_configByAttributeType.ContainsKey(type)) {
+                            options.Add(new OptionInDest(attr, actualType, type, memberInfo));
+
                             break;
-                        case GetOptResultType.LongOption:
-                            prop = Info.LongOptionTargets[result.LongOption!];
-                            break;
-                        // case GetOptResultType.Values:
-                        // case GetOptResultType.Invalid:
-                        default:
-                            continue;
                         }
 
-                        prop.SetValue(rv, result.OptionType switch {
-                            OptionType.Switch => (object)true,
-                            OptionType.Parameterized => result.Argument,
-                            OptionType.MultiParameterized => result.Arguments,
-                            _ => throw new ArgumentOutOfRangeException(),
-                        });
-                    } else {
-                        bool exit = false;
+                        type = type.BaseType;
+                    }
+                }
+            }
 
-                        foreach (var handler in Info.ErrorHandlers) {
-                            if (handler.Invoke(rv, new object[] {err, result}) is bool b) exit |= b;
-                        }
+            return options;
+        }
 
-                        if (errorHandler != null) {
-                            exit |= errorHandler.Invoke(err, result);
-                        }
+        private IList<OptionInDest> ReadOptions() {
+            var options = new List<OptionInDest>();
 
-                        if (exit) break;
+            var typeOfT = typeof(T);
+            options.AddRange(ReadOptionsFromMemberInfos(typeOfT.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)));
+            options.AddRange(ReadOptionsFromMemberInfos(typeOfT.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)));
+            options.AddRange(ReadOptionsFromMemberInfos(typeOfT.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)));
+
+            return options;
+        }
+
+        private void EvaluateCategories(IList<OptionInDest> options) {
+            foreach (var (categoryType, categoryConfig) in _configByCategoryType) {
+                var instance = (IOptionCategoryBase) Activator.CreateInstance(categoryType);
+
+                categoryConfig.Instance = instance;
+                categoryConfig.Options = new List<OptionInDest>();
+
+                if (categoryConfig.ConfigType != null) {
+                    typeof(IConfigurable<>).MakeGenericType(categoryConfig.ConfigType).GetMethod(nameof(IConfigurable<int>.Config))?.Invoke(instance, new[] { categoryConfig.Config });
+                }
+            }
+
+            foreach (var option in options) {
+                _configByAttributeType[option.AttributeType].Options.Add(option);
+            }
+
+            foreach (var (categoryType, categoryConfig) in _configByCategoryType) {
+                var optionType = typeof(IOptionCategory<>.Option).MakeGenericType(categoryConfig.AttributeType);
+                var optionCtor = optionType.GetConstructor(new[] { categoryConfig.AttributeType, typeof(MemberInfo) });
+
+                var listType = typeof(List<>).MakeGenericType(optionType);
+                var listAdder = listType.GetMethod(nameof(List<int>.Add));
+
+                var optionList = listType.GetConstructor(Array.Empty<Type>())!.Invoke(null);
+
+                foreach (var option in categoryConfig.Options) {
+                    listAdder!.Invoke(optionList, new[] { optionCtor!.Invoke(new object[] { option.Attribute, option.Target }) });
+                }
+
+                categoryType.GetProperty(nameof(IOptionCategory<OptionAttribute>.Options))!.GetSetMethod()!.Invoke(categoryConfig.Instance, new[] { optionList });
+            }
+
+            _categories = _configByCategoryType.Select(x => x.Value.Instance).ToList();
+        }
+
+        private void EvaluateMetaInfo() {
+            _evaluated = true;
+
+            EvaluateCategories(ReadOptions());
+        }
+
+        public T ParseFromSpan(ReadOnlySpan<string> args) {
+            if (!_evaluated) EvaluateMetaInfo();
+
+            int len = args.Length;
+            int ptr = 0;
+            var rv = new T();
+
+            while (ptr < len) {
+                var current = args[ptr..];
+                int consumed = -1;
+
+                foreach (var cat in _categories) {
+                    if (cat.Match(args[ptr])) {
+                        consumed = cat.Consume(current, rv);
+                        break;
                     }
                 }
 
-                Info.Opt.EndParse();
-                return rv;
+                if (consumed <= 0) { // avoid endless loop when IOptionCategory.Consume returns 0 by error
+                    consumed = 1;
+                }
+
+                ptr += consumed;
             }
+
+            return rv;
+        }
+
+        public T Parse(params string[] args) {
+            return ParseFromSpan(new ReadOnlySpan<string>(args));
+        }
+
+        private void LoadDefaultConfigs() {
+            Use<ShortOptionCategory, ShortOptionAttribute, ShortOptionConfig>(new ShortOptionConfig { Prefix = "-" });
+            Use<LongOptionCategory, LongOptionAttribute, LongOptionConfig>(new LongOptionConfig { Prefix = "--", ParameterSeparator = "=" });
+        }
+
+        public CommandLineParser() : this(false) { }
+
+        public CommandLineParser(bool disableDefaultConfigs) {
+            if (!disableDefaultConfigs) LoadDefaultConfigs(); 
+            _categories = null!;
         }
     }
 }

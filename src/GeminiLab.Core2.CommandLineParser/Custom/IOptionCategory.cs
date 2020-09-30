@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
 
-namespace Exam {
+namespace GeminiLab.Core2.CommandLineParser.Custom {
     public interface IOptionCategory<TOptionAttribute> : IOptionCategoryBase where TOptionAttribute : OptionAttribute {
         struct Option {
             public TOptionAttribute Attribute;

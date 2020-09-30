@@ -6,6 +6,7 @@ using GeminiLab.Core2.GetOpt;
 using Xunit;
 
 namespace XUnitTester.GeminiLab_Core2_CommandLineParser {
+    /*
     public class TestOptions {
         public Queue<string> Logs { get; } = new Queue<string>();
 
@@ -65,4 +66,5 @@ namespace XUnitTester.GeminiLab_Core2_CommandLineParser {
             AssertLogQueue(result.Logs, "E:echo", $"B:{true}", "D:DE!,FF!", $"!:{GetOptError.ValueExpected}", $"!:{GetOptError.UnexpectedAttachedValue}", $"B:{true}", $"!:{GetOptError.UnexpectedValue}", "!!!!!!");
         }
     }
+    */
 }

@@ -1,14 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using GeminiLab.Core2.CommandLineParser.Custom;
 
-namespace Exam.Default {
+namespace GeminiLab.Core2.CommandLineParser.Default {
     public class LongOptionCategory : IOptionCategory<LongOptionAttribute>, IConfigurable<LongOptionConfig> {
-        private string                              _prefix;
-        private Dictionary<string, MemberInfo>      _targets         = new Dictionary<string, MemberInfo>();
-        private Dictionary<string, OptionParameter> _optionParameter = new Dictionary<string, OptionParameter>();
+        private          string                              _prefix          = null!;
+        private readonly Dictionary<string, MemberInfo>      _targets         = new Dictionary<string, MemberInfo>();
+        private readonly Dictionary<string, OptionParameter> _optionParameter = new Dictionary<string, OptionParameter>();
 
-        private LongOptionConfig _config;
+        private LongOptionConfig _config = null!;
         
         public bool Match(string item) {
             return item.Length > _prefix.Length && item.StartsWith(_prefix);

@@ -1,3 +1,3 @@
-namespace Exam.Default {
+namespace GeminiLab.Core2.CommandLineParser.Default {
     public class ShortOptionConfig : OptionCommonConfig { }
 }

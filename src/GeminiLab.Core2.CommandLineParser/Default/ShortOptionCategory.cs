@@ -1,14 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using GeminiLab.Core2.CommandLineParser.Custom;
 
-namespace Exam.Default {
+namespace GeminiLab.Core2.CommandLineParser.Default {
     public class ShortOptionCategory : IOptionCategory<ShortOptionAttribute>, IConfigurable<ShortOptionConfig> {
-        private char                              _prefix;
-        private Dictionary<char, MemberInfo>      _targets         = new Dictionary<char, MemberInfo>();
-        private Dictionary<char, OptionParameter> _optionParameter = new Dictionary<char, OptionParameter>();
+        private          char                              _prefix;
+        private readonly Dictionary<char, MemberInfo>      _targets         = new Dictionary<char, MemberInfo>();
+        private readonly Dictionary<char, OptionParameter> _optionParameter = new Dictionary<char, OptionParameter>();
 
-        private ShortOptionConfig _config;
+        private ShortOptionConfig _config = null!;
         
         public bool Match(string item) {
             return item.Length >= 2 && item[0] == _prefix && item[1] != _prefix;

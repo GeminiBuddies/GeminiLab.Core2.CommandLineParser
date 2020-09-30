@@ -28,8 +28,4 @@
     <AssemblyOriginatorKeyFile>..\..\keys\geminilab.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="GeminiLab.Core2.GetOpt" Version="1.0.0" />
-  </ItemGroup>
 </Project>
