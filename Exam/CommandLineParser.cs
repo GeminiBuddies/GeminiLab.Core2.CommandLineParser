@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Exam.Default;
 
 namespace Exam {
     public class CommandLineParser<T> where T : new() {
@@ -200,6 +201,7 @@ namespace Exam {
 
         private void LoadDefaultConfigs() {
             Use<ShortOptionCategory, ShortOptionAttribute, ShortOptionConfig>(new ShortOptionConfig { Prefix = "-" });
+            Use<LongOptionCategory, LongOptionAttribute, LongOptionConfig>(new LongOptionConfig { Prefix = "--", ParameterSeparator = "="});
         }
 
         public CommandLineParser() : this(false) { }
