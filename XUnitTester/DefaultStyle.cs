@@ -4,7 +4,7 @@ using GeminiLab.Core2.CommandLineParser.Default;
 using Xunit;
 
 namespace XUnitTester {
-    public class TestOptions {
+    public class DefaultStyleTestOptions {
         public Queue<string> Logs { get; } = new Queue<string>();
 
         [ShortOption('a', OptionParameter.Required)]
@@ -24,20 +24,20 @@ namespace XUnitTester {
         [ShortOption('c', OptionParameter.Required)]
         public void OptionC(string value) => Logs.Enqueue($"C:{value}");
 
-        [ShortOption('d', OptionParameter.Optional, Default = "d-fault")]
-        [LongOption("delta", OptionParameter.Optional, Default = "delta-fault")]
+        [ShortOption('d', OptionParameter.Optional)]
+        [LongOption("delta", OptionParameter.Optional)]
         public string OptionD {
-            set => Logs.Enqueue($"D:{value}");
+            set => Logs.Enqueue($"D:{value ?? "default"}");
         }
 
-        [ShortOption('e', OptionParameter.Optional, Default = "e-fault")]
+        [ShortOption('e', OptionParameter.Optional)]
         [LongOption("echo", OptionParameter.Required)]
         public string OptionE {
-            set => Logs.Enqueue($"E:{value}");
+            set => Logs.Enqueue($"E:{value ?? "default"}");
         }
     }
 
-    public static class Test {
+    public static class DefaultStyle {
         private static void AssertLogQueue(Queue<string> logs, params string[] expected) {
             foreach (var s in expected) {
                 Assert.NotEmpty(logs);
@@ -62,8 +62,8 @@ namespace XUnitTester {
                 "echo",
                 "--echo=echo",
             };
-            var result = new CommandLineParser<TestOptions>().Parse(args);
-            AssertLogQueue(result.Logs, "A:x", "B:True", "C:charlie", "B:True", "D:d-fault", "D:d", "D:d", "E:e-fault", "E:echo", "E:echo");
+            var result = new CommandLineParser<DefaultStyleTestOptions>().Parse(args);
+            AssertLogQueue(result.Logs, "A:x", "B:True", "C:charlie", "B:True", "D:default", "D:d", "D:d", "E:default", "E:echo", "E:echo");
         }
     }
 }

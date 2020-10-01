@@ -26,7 +26,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
 
                     ptr += 1;
                 } else if (option.Parameter == OptionParameter.Optional) {
-                    var param = option.Default;
+                    string? param = null;
                     
                     if (ptr + 1 < len) {
                         param = content[(ptr + 1)..].ToString();
@@ -65,7 +65,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
         public IEnumerable<IOptionCategory<ShortOptionAttribute>.Option> Options {
             set {
                 foreach (var option in value) {
-                    _options[option.Attribute.Option] = new OptionInDefaultCategory(option.Target, option.Attribute.Parameter, option.Attribute.Default);
+                    _options[option.Attribute.Option] = new OptionInDefaultCategory(option.Target, option.Attribute.Parameter);
                 }
             }
         }

@@ -11,6 +11,5 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
 
         public char            Option    { get; set; }
         public OptionParameter Parameter { get; set; }
-        public string?         Default   { get; set; } = null;
     }
 }

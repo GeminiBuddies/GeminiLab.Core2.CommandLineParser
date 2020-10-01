@@ -24,7 +24,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
                 if (option.Parameter == OptionParameter.None) {
                     SetMember(target, option.Target);
                 } else if (option.Parameter == OptionParameter.Optional) {
-                    var param = option.Default;
+                    string? param = null;
 
                     if (sepIndex > 0) {
                         param = content[(sepIndex + 1)..].ToString();
@@ -57,7 +57,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
         public IEnumerable<IOptionCategory<LongOptionAttribute>.Option> Options {
             set {
                 foreach (var option in value) {
-                    _options[option.Attribute.Option] = new OptionInDefaultCategory(option.Target, option.Attribute.Parameter, option.Attribute.Default);
+                    _options[option.Attribute.Option] = new OptionInDefaultCategory(option.Target, option.Attribute.Parameter);
                 }
             }
         }

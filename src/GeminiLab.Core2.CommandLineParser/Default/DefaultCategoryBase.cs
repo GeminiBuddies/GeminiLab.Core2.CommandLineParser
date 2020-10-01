@@ -4,15 +4,13 @@ using System.Reflection;
 namespace GeminiLab.Core2.CommandLineParser.Default {
     public abstract class DefaultCategoryBase {
         protected class OptionInDefaultCategory {
-            public OptionInDefaultCategory(MemberInfo target, OptionParameter parameter, string? @default) {
+            public OptionInDefaultCategory(MemberInfo target, OptionParameter parameter) {
                 Target = target;
                 Parameter = parameter;
-                Default = @default;
             }
             
             public MemberInfo      Target    { get; set; }
             public OptionParameter Parameter { get; set; }
-            public string?         Default   { get; set; }
         }
         
         protected void Assert(bool boolean) {
