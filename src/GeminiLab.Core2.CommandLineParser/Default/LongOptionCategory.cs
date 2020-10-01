@@ -10,20 +10,18 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
 
         private LongOptionConfig _config = null!;
         
-        public bool Match(string item) {
-            return item.Length > _prefix.Length && item.StartsWith(_prefix);
-        }
-
-        public int Consume(ReadOnlySpan<string> args, object target) {
+        public int TryConsume(Span<string> args, object target) {
+            if (args[0].Length <= _prefix.Length || !args[0].StartsWith(_prefix)) {
+                return 0;
+            }
+            
             var content = args[0].AsSpan(_prefix.Length);
             var sepIndex = content.IndexOf(_config.ParameterSeparator.AsSpan());
             var nextStringConsumed = false;
 
             var optionStr = (sepIndex > 0 ? content[..sepIndex] : content).ToString();
             if (_options.TryGetValue(optionStr, out var option)) {
-                if (option.Parameter == OptionParameter.None) {
-                    SetMember(target, option.Target);
-                } else if (option.Parameter == OptionParameter.Optional) {
+                if (option.Parameter == OptionParameter.Optional) {
                     string? param = null;
 
                     if (sepIndex > 0) {
@@ -44,11 +42,11 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
                     }
                     
                     SetMember(target, option.Target, param);
-                } else {
-                    throw new FoobarException();
+                } else { // if (option.Parameter == OptionParameter.None) 
+                    SetMember(target, option.Target);
                 }
             } else {
-                if (!_config.IgnoreUnknownOption) throw new FoobarException();
+                return 0;
             }
 
             return nextStringConsumed ? 2 : 1;

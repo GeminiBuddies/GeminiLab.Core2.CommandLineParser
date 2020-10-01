@@ -44,6 +44,7 @@ namespace GeminiLab.Core2.CommandLineParser {
 
         private readonly Dictionary<Type, CategoryConfig> _configByCategoryType  = new Dictionary<Type, CategoryConfig>();
         private readonly Dictionary<Type, CategoryConfig> _configByAttributeType = new Dictionary<Type, CategoryConfig>();
+        private readonly List<Type>                       _orderedCategoryTypes  = new List<Type>();
 
         private bool                      _evaluated = false;
         private List<IOptionCategoryBase> _categories;
@@ -51,13 +52,15 @@ namespace GeminiLab.Core2.CommandLineParser {
         private void RemoveExistingConfigs(Type categoryType, Type attributeType) {
             CategoryConfig config;
             if (_configByCategoryType.TryGetValue(categoryType, out config)) {
+                _orderedCategoryTypes.Remove(categoryType);
                 _configByCategoryType.Remove(categoryType);
                 _configByAttributeType.Remove(config.AttributeType);
             }
 
             if (_configByAttributeType.TryGetValue(attributeType, out config)) {
-                _configByAttributeType.Remove(attributeType);
+                _orderedCategoryTypes.Remove(config.CategoryType);
                 _configByCategoryType.Remove(config.CategoryType);
+                _configByAttributeType.Remove(attributeType);
             }
         }
 
@@ -75,6 +78,7 @@ namespace GeminiLab.Core2.CommandLineParser {
 
             _configByCategoryType[categoryType] = categoryConfig;
             _configByAttributeType[attributeType] = categoryConfig;
+            _orderedCategoryTypes.Add(categoryType);
 
             return this;
         }
@@ -95,6 +99,7 @@ namespace GeminiLab.Core2.CommandLineParser {
 
             _configByCategoryType[categoryType] = categoryConfig;
             _configByAttributeType[attributeType] = categoryConfig;
+            _orderedCategoryTypes.Add(categoryType);
 
             return this;
         }
@@ -166,7 +171,7 @@ namespace GeminiLab.Core2.CommandLineParser {
                 categoryType.GetProperty(nameof(IOptionCategory<OptionAttribute>.Options))!.GetSetMethod()!.Invoke(categoryConfig.Instance, new[] { optionList });
             }
 
-            _categories = _configByCategoryType.Select(x => x.Value.Instance).ToList();
+            _categories = _orderedCategoryTypes.Select(type => _configByCategoryType[type].Instance).ToList();
         }
 
         private void EvaluateMetaInfo() {
@@ -175,7 +180,7 @@ namespace GeminiLab.Core2.CommandLineParser {
             EvaluateCategories(ReadOptions());
         }
 
-        public T ParseFromSpan(ReadOnlySpan<string> args) {
+        private T DoParse(Span<string> args) {
             if (!_evaluated) EvaluateMetaInfo();
 
             int len = args.Length;
@@ -184,23 +189,33 @@ namespace GeminiLab.Core2.CommandLineParser {
 
             while (ptr < len) {
                 var current = args[ptr..];
-                int consumed = -1;
+                int consumed = 0;
 
                 foreach (var cat in _categories) {
-                    if (cat.Match(args[ptr])) {
-                        consumed = cat.Consume(current, rv);
+                    consumed = cat.TryConsume(current, rv);
+
+                    if (consumed > 0) {
                         break;
                     }
                 }
 
+                if (consumed <= 0) {
+                    // todo: unknown option exception 
+                    throw new FoobarException();
+                }
+                
                 ptr += consumed;
             }
 
             return rv;
         }
+        
+        public T ParseFromSpan(ReadOnlySpan<string> args) {
+            return DoParse(args.ToArray());
+        }
 
         public T Parse(params string[] args) {
-            return ParseFromSpan(new ReadOnlySpan<string>(args));
+            return DoParse((string[])args.Clone());
         }
 
         private void LoadDefaultConfigs() {

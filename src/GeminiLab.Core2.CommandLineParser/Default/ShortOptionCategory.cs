@@ -10,22 +10,18 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
 
         private ShortOptionConfig _config = null!;
         
-        public bool Match(string item) {
-            return item.Length >= 2 && item[0] == _prefix && item[1] != _prefix;
-        }
+        public int TryConsume(Span<string> args, object target) {
+            if (args[0].Length <= 1 || args[0][0] != _prefix || args[0][1] == _prefix) {
+                return 0;
+            }
 
-        public int Consume(ReadOnlySpan<string> args, object target) {
             var content = args[0].AsSpan(1);
             var len = content.Length;
             var nextStringConsumed = false;
 
             int ptr = 0;
             while (ptr < len && _options.TryGetValue(content[ptr], out var option)) {
-                if (option.Parameter == OptionParameter.None) {
-                    SetMember(target, option.Target);
-
-                    ptr += 1;
-                } else if (option.Parameter == OptionParameter.Optional) {
+                if (option.Parameter == OptionParameter.Optional) {
                     string? param = null;
                     
                     if (ptr + 1 < len) {
@@ -50,13 +46,16 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
                     SetMember(target, option.Target, param);
 
                     ptr = len;
-                } else {
-                    throw new FoobarException();
+                } else { // if (option.Parameter == OptionParameter.None) 
+                    SetMember(target, option.Target);
+
+                    ptr += 1;
                 }
             }
 
             if (ptr < len) {
-                if (!_config.IgnoreUnknownOption) throw new FoobarException();
+                args[0] = args[0][ptr..];
+                return 0;
             }
             
             return nextStringConsumed ? 2 : 1;
