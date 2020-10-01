@@ -28,8 +28,10 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --configuration Develop --no-restore
+    - name: Pretest
+      run: mkdir coverage
     - name: Test
-      run: dotnet test -nologo -p:CollectCoverage=true -p:CoverletOutputFormat=opencover -p:Exclude="\"[xunit.*]*\"" -p:ExcludeByAttribute="CompilerGeneratedAttribute" -v=m XUnitTester/XUnitTester.csproj
+      run: dotnet test -nologo -p:CollectCoverage=true -p:CoverletOutputFormat=lcov -p:CoverletOutput="../coverage/lcov.info" -p:Exclude="\"[xunit.*]*\"" -p:ExcludeByAttribute="CompilerGeneratedAttribute" -v=m XUnitTester/XUnitTester.csproj
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
