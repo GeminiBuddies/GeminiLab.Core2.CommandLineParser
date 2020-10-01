@@ -142,7 +142,7 @@ namespace GeminiLab.Core2.CommandLineParser {
                 categoryConfig.Options = new List<OptionInDest>();
 
                 if (categoryConfig.ConfigType != null) {
-                    typeof(IConfigurable<>).MakeGenericType(categoryConfig.ConfigType).GetMethod(nameof(IConfigurable<int>.Config))?.Invoke(instance, new[] { categoryConfig.Config });
+                    typeof(IConfigurable<>).MakeGenericType(categoryConfig.ConfigType).GetMethod(nameof(IConfigurable<int>.Config))!.Invoke(instance, new[] { categoryConfig.Config });
                 }
             }
 
@@ -191,10 +191,6 @@ namespace GeminiLab.Core2.CommandLineParser {
                         consumed = cat.Consume(current, rv);
                         break;
                     }
-                }
-
-                if (consumed <= 0) { // avoid endless loop when IOptionCategory.Consume returns 0 by error
-                    consumed = 1;
                 }
 
                 ptr += consumed;

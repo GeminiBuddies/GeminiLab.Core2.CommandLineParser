@@ -4,10 +4,9 @@ using System.Reflection;
 using GeminiLab.Core2.CommandLineParser.Custom;
 
 namespace GeminiLab.Core2.CommandLineParser.Default {
-    public class ShortOptionCategory : IOptionCategory<ShortOptionAttribute>, IConfigurable<ShortOptionConfig> {
-        private          char                              _prefix;
-        private readonly Dictionary<char, MemberInfo>      _targets         = new Dictionary<char, MemberInfo>();
-        private readonly Dictionary<char, OptionParameter> _optionParameter = new Dictionary<char, OptionParameter>();
+    public class ShortOptionCategory : DefaultCategoryBase, IOptionCategory<ShortOptionAttribute>, IConfigurable<ShortOptionConfig> {
+        private          char                                      _prefix;
+        private readonly Dictionary<char, OptionInDefaultCategory> _options = new Dictionary<char, OptionInDefaultCategory>();
 
         private ShortOptionConfig _config = null!;
         
@@ -21,25 +20,22 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
             var nextStringConsumed = false;
 
             int ptr = 0;
-            char option;
-            while (ptr < len && _targets.TryGetValue(option = content[ptr], out var memberInfo)) {
-                var parameter = _optionParameter[option];
-
-                if (parameter == OptionParameter.None) {
-                    MemberSetter.SetMember(target, memberInfo);
+            while (ptr < len && _options.TryGetValue(content[ptr], out var option)) {
+                if (option.Parameter == OptionParameter.None) {
+                    SetMember(target, option.Target);
 
                     ptr += 1;
-                } else if (parameter == OptionParameter.Optional) {
-                    var param = _config.DefaultValueForOptionalParameter;
+                } else if (option.Parameter == OptionParameter.Optional) {
+                    var param = option.Default;
                     
                     if (ptr + 1 < len) {
                         param = content[(ptr + 1)..].ToString();
                     }
                     
-                    MemberSetter.SetMember(target, memberInfo, param);
+                    SetMember(target, option.Target, param);
 
                     ptr = len;
-                } else if (parameter == OptionParameter.Required) {
+                } else if (option.Parameter == OptionParameter.Required) {
                     var param = "";
                     
                     if (ptr + 1 < len) {
@@ -48,14 +44,10 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
                         param = args[1];
                         nextStringConsumed = true;
                     } else {
-                        if (_config.ContinueWhenFailedToGetRequiredParameter) {
-                            param = _config.DefaultValueForRequiredParameter;
-                        } else {
-                            throw new FoobarException();
-                        }
+                        throw new FoobarException();
                     }
                     
-                    MemberSetter.SetMember(target, memberInfo, param);
+                    SetMember(target, option.Target, param);
 
                     ptr = len;
                 } else {
@@ -73,8 +65,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
         public IEnumerable<IOptionCategory<ShortOptionAttribute>.Option> Options {
             set {
                 foreach (var option in value) {
-                    _targets[option.Attribute.Option] = option.Target;
-                    _optionParameter[option.Attribute.Option] = option.Attribute.Parameter;
+                    _options[option.Attribute.Option] = new OptionInDefaultCategory(option.Target, option.Attribute.Parameter, option.Attribute.Default);
                 }
             }
         }
