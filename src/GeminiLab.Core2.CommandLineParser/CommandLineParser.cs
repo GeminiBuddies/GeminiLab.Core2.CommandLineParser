@@ -221,6 +221,7 @@ namespace GeminiLab.Core2.CommandLineParser {
         private void LoadDefaultConfigs() {
             Use<ShortOptionCategory, ShortOptionAttribute, ShortOptionConfig>(new ShortOptionConfig { Prefix = "-" });
             Use<LongOptionCategory, LongOptionAttribute, LongOptionConfig>(new LongOptionConfig { Prefix = "--", ParameterSeparator = "=" });
+            Use<TailArgumentsCategory, TailArgumentsAttribute, TailArgumentsConfig>(new TailArgumentsConfig { TailMark = "--" });
             Use<NonOptionArgumentCategory, NonOptionArgumentAttribute>();
         }
 

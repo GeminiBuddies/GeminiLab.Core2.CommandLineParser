@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using GeminiLab.Core2.CommandLineParser;
 using GeminiLab.Core2.CommandLineParser.Default;
@@ -38,6 +39,22 @@ namespace XUnitTester {
 
         [NonOptionArgument]
         public void NonOptionArgument(string value) => Logs.Enqueue($"NOA:{value}");
+
+        [TailArguments]
+        public void TailArguments(IEnumerable<string> value) {
+            foreach (var str in value) {
+                Logs.Enqueue($"TAIL:{str}");
+            }
+        }
+    }
+    
+    public class DefaultStyleTestOptionB {
+        public Queue<string> Logs { get; } = new Queue<string>();
+
+        [ShortOption('a', OptionParameter.Required)]
+        public string OptionA {
+            set => Logs.Enqueue($"A:{value}");
+        }
     }
 
     public static class DefaultStyle {
@@ -51,7 +68,7 @@ namespace XUnitTester {
         }
 
         [Fact]
-        public static void NormalTest() {
+        public static void Normal() {
             var args = new[] {
                 "-ax",
                 "-bc",
@@ -65,9 +82,18 @@ namespace XUnitTester {
                 "--echo",
                 "echo",
                 "--echo=echo",
+                "--",
+                "-ax",
+                "bravo",
             };
             var result = new CommandLineParser<DefaultStyleTestOptions>().Parse(args);
-            AssertLogQueue(result.Logs, "A:x", "B:True", "C:charlie", "B:True", "D:default", "D:d", "D:d", "E:default", "NOA:echo", "E:echo", "E:echo");
+            AssertLogQueue(result.Logs, "A:x", "B:True", "C:charlie", "B:True", "D:default", "D:d", "D:d", "E:default", "NOA:echo", "E:echo", "E:echo", "TAIL:-ax", "TAIL:bravo");
+        }
+        
+        [Fact]
+        public static void Error() {
+            Assert.ThrowsAny<Exception>(() => { new CommandLineParser<DefaultStyleTestOptionB>().Parse("-ax", "--", "-c"); });
+            Assert.ThrowsAny<Exception>(() => { new CommandLineParser<DefaultStyleTestOptionB>().Parse("-ax", "-b", "-c"); });
         }
     }
 }

@@ -49,6 +49,23 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
                 fieldInfo.SetValue(target, value);
                 return;
             }
-        }      
+        }
+        
+        protected void SetMember(object target, MemberInfo memberInfo, string[] value) {
+            switch (memberInfo) {
+            case MethodInfo methodInfo:
+                Assert(methodInfo.GetParameters().Length == 1 && methodInfo.GetParameters()[0].ParameterType.IsAssignableFrom(typeof(string[])));
+                methodInfo.Invoke(target, new object?[] { value });
+                return;
+            case PropertyInfo propertyInfo:
+                Assert(propertyInfo.CanWrite && propertyInfo.PropertyType.IsAssignableFrom(typeof(string[])));
+                propertyInfo.SetMethod.Invoke(target, new object?[] { value });
+                return;
+            case FieldInfo fieldInfo:
+                Assert(fieldInfo.FieldType.IsAssignableFrom(typeof(string[])));
+                fieldInfo.SetValue(target, value);
+                return;
+            }
+        }
     }
 }
