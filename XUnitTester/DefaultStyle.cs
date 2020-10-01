@@ -35,6 +35,9 @@ namespace XUnitTester {
         public string OptionE {
             set => Logs.Enqueue($"E:{value ?? "default"}");
         }
+
+        [NonOptionArgument]
+        public void NonOptionArgument(string value) => Logs.Enqueue($"NOA:{value}");
     }
 
     public static class DefaultStyle {
@@ -58,12 +61,13 @@ namespace XUnitTester {
                 "-dd",
                 "--delta=d",
                 "-e",
+                "echo",
                 "--echo",
                 "echo",
                 "--echo=echo",
             };
             var result = new CommandLineParser<DefaultStyleTestOptions>().Parse(args);
-            AssertLogQueue(result.Logs, "A:x", "B:True", "C:charlie", "B:True", "D:default", "D:d", "D:d", "E:default", "E:echo", "E:echo");
+            AssertLogQueue(result.Logs, "A:x", "B:True", "C:charlie", "B:True", "D:default", "D:d", "D:d", "E:default", "NOA:echo", "E:echo", "E:echo");
         }
     }
 }
