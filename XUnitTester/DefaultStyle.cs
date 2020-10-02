@@ -52,6 +52,7 @@ namespace XUnitTester {
         public Queue<string> Logs { get; } = new Queue<string>();
 
         [ShortOption('a', OptionParameter.Required)]
+        [LongOption("alpha", OptionParameter.Required)]
         public string OptionA {
             set => Logs.Enqueue($"A:{value}");
         }
@@ -94,6 +95,9 @@ namespace XUnitTester {
         public static void Error() {
             Assert.ThrowsAny<Exception>(() => { new CommandLineParser<DefaultStyleTestOptionB>().Parse("-ax", "--", "-c"); });
             Assert.ThrowsAny<Exception>(() => { new CommandLineParser<DefaultStyleTestOptionB>().Parse("-ax", "-b", "-c"); });
+            Assert.ThrowsAny<Exception>(() => { new CommandLineParser<DefaultStyleTestOptionB>().Parse("-a"); });
+            Assert.ThrowsAny<Exception>(() => { new CommandLineParser<DefaultStyleTestOptionB>().Parse("--alpha"); });
+            Assert.ThrowsAny<Exception>(() => { new CommandLineParser<DefaultStyleTestOptionB>().Parse("--alpha=1", "--bravo"); });
         }
     }
 }
