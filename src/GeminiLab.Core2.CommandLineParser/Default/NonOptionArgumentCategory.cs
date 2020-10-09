@@ -17,7 +17,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
             return 1;
         }
 
-        public IEnumerable<IOptionCategory<NonOptionArgumentAttribute>.Option> Options {
+        public IEnumerable<IOptionCategory<NonOptionArgumentAttribute>.MemberWithAttribute> Options {
             set => _memberInfo = value.FirstOrDefault()?.Target;
         }
     }

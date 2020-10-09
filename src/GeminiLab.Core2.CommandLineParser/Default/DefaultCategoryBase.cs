@@ -14,7 +14,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
         }
         
         protected void Assert(bool boolean) {
-            if (!boolean) throw new FoobarException();
+            if (!boolean) throw new DefaultException();
         }
 
         protected void SetMember(object target, MemberInfo memberInfo) {

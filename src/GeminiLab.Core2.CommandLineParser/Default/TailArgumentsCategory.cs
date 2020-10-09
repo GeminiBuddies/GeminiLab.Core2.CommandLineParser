@@ -22,7 +22,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
             return args.Length;
         }
 
-        public IEnumerable<IOptionCategory<TailArgumentsAttribute>.Option> Options {
+        public IEnumerable<IOptionCategory<TailArgumentsAttribute>.MemberWithAttribute> Options {
             set => _memberInfo = value.FirstOrDefault()?.Target;
         }
 

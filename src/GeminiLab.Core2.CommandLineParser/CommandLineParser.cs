@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
 using GeminiLab.Core2.CommandLineParser.Default;
@@ -7,178 +8,10 @@ using GeminiLab.Core2.CommandLineParser.Custom;
 
 namespace GeminiLab.Core2.CommandLineParser {
     public class CommandLineParser<T> where T : new() {
-        private class CategoryConfig {
-            public Type    CategoryType  { get; set; }
-            public Type    AttributeType { get; set; }
-            public Type?   ConfigType    { get; set; }
-            public object? Config        { get; set; }
+        private bool _evaluated = false;
 
-            public IOptionCategoryBase Instance { get; set; }
-            public List<OptionInDest>  Options  { get; set; }
-
-            public CategoryConfig(Type categoryType, Type attributeType, Type? configType, object? config) {
-                CategoryType = categoryType;
-                AttributeType = attributeType;
-                ConfigType = configType;
-                Config = config;
-
-                Instance = null!;
-                Options = null!;
-            }
-        }
-
-        private class OptionInDest {
-            public OptionInDest(Attribute attribute, Type actualType, Type attributeType, MemberInfo target) {
-                Attribute = attribute;
-                ActualType = actualType;
-                AttributeType = attributeType;
-                Target = target;
-            }
-
-            public Attribute  Attribute     { get; set; }
-            public Type       ActualType    { get; set; }
-            public Type       AttributeType { get; set; }
-            public MemberInfo Target        { get; set; }
-        }
-
-
-        private readonly Dictionary<Type, CategoryConfig> _configByCategoryType  = new Dictionary<Type, CategoryConfig>();
-        private readonly Dictionary<Type, CategoryConfig> _configByAttributeType = new Dictionary<Type, CategoryConfig>();
-        private readonly List<Type>                       _orderedCategoryTypes  = new List<Type>();
-
-        private bool                      _evaluated = false;
-        private List<IOptionCategoryBase> _categories;
-
-        private void RemoveExistingConfigs(Type categoryType, Type attributeType) {
-            CategoryConfig config;
-            if (_configByCategoryType.TryGetValue(categoryType, out config)) {
-                _orderedCategoryTypes.Remove(categoryType);
-                _configByCategoryType.Remove(categoryType);
-                _configByAttributeType.Remove(config.AttributeType);
-            }
-
-            if (_configByAttributeType.TryGetValue(attributeType, out config)) {
-                _orderedCategoryTypes.Remove(config.CategoryType);
-                _configByCategoryType.Remove(config.CategoryType);
-                _configByAttributeType.Remove(attributeType);
-            }
-        }
-
-        public CommandLineParser<T> Use<TOptionCategory, TOptionAttribute>()
-            where TOptionCategory : IOptionCategory<TOptionAttribute>, new()
-            where TOptionAttribute : OptionAttribute {
-            _evaluated = false;
-
-            var attributeType = typeof(TOptionAttribute);
-            var categoryType = typeof(TOptionCategory);
-
-            RemoveExistingConfigs(categoryType, attributeType);
-
-            var categoryConfig = new CategoryConfig(categoryType, attributeType, null, null);
-
-            _configByCategoryType[categoryType] = categoryConfig;
-            _configByAttributeType[attributeType] = categoryConfig;
-            _orderedCategoryTypes.Add(categoryType);
-
-            return this;
-        }
-
-
-        public CommandLineParser<T> Use<TOptionCategory, TOptionAttribute, TConfig>(TConfig config)
-            where TOptionCategory : IOptionCategory<TOptionAttribute>, IConfigurable<TConfig>, new()
-            where TOptionAttribute : OptionAttribute {
-            _evaluated = false;
-
-            var attributeType = typeof(TOptionAttribute);
-            var categoryType = typeof(TOptionCategory);
-            var configType = typeof(TConfig);
-
-            RemoveExistingConfigs(categoryType, attributeType);
-
-            var categoryConfig = new CategoryConfig(categoryType, attributeType, configType, config);
-
-            _configByCategoryType[categoryType] = categoryConfig;
-            _configByAttributeType[attributeType] = categoryConfig;
-            _orderedCategoryTypes.Add(categoryType);
-
-            return this;
-        }
-        
-        private IList<OptionInDest> ReadOptionsFromMemberInfos(IEnumerable<MemberInfo> memberInfos) {
-            var options = new List<OptionInDest>();
-
-            foreach (var memberInfo in memberInfos) {
-                var attrs = memberInfo.GetCustomAttributes(typeof(OptionAttribute)).ToArray();
-                foreach (var attr in attrs) {
-                    var type = attr.GetType();
-                    var actualType = type;
-
-                    while (type != null && type != typeof(OptionAttribute)) {
-                        if (_configByAttributeType.ContainsKey(type)) {
-                            options.Add(new OptionInDest(attr, actualType, type, memberInfo));
-
-                            break;
-                        }
-
-                        type = type.BaseType;
-                    }
-                }
-            }
-
-            return options;
-        }
-
-        private IList<OptionInDest> ReadOptions() {
-            var options = new List<OptionInDest>();
-
-            var typeOfT = typeof(T);
-            options.AddRange(ReadOptionsFromMemberInfos(typeOfT.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)));
-            options.AddRange(ReadOptionsFromMemberInfos(typeOfT.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)));
-            options.AddRange(ReadOptionsFromMemberInfos(typeOfT.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)));
-
-            return options;
-        }
-
-        private void EvaluateCategories(IList<OptionInDest> options) {
-            foreach (var (categoryType, categoryConfig) in _configByCategoryType) {
-                var instance = (IOptionCategoryBase) Activator.CreateInstance(categoryType);
-
-                categoryConfig.Instance = instance;
-                categoryConfig.Options = new List<OptionInDest>();
-
-                if (categoryConfig.ConfigType != null) {
-                    typeof(IConfigurable<>).MakeGenericType(categoryConfig.ConfigType).GetMethod(nameof(IConfigurable<int>.Config))!.Invoke(instance, new[] { categoryConfig.Config });
-                }
-            }
-
-            foreach (var option in options) {
-                _configByAttributeType[option.AttributeType].Options.Add(option);
-            }
-
-            foreach (var (categoryType, categoryConfig) in _configByCategoryType) {
-                var optionType = typeof(IOptionCategory<>.Option).MakeGenericType(categoryConfig.AttributeType);
-                var optionCtor = optionType.GetConstructor(new[] { categoryConfig.AttributeType, typeof(MemberInfo) });
-
-                var listType = typeof(List<>).MakeGenericType(optionType);
-                var listAdder = listType.GetMethod(nameof(List<int>.Add));
-
-                var optionList = listType.GetConstructor(Array.Empty<Type>())!.Invoke(null);
-
-                foreach (var option in categoryConfig.Options) {
-                    listAdder!.Invoke(optionList, new[] { optionCtor!.Invoke(new object[] { option.Attribute, option.Target }) });
-                }
-
-                categoryType.GetProperty(nameof(IOptionCategory<OptionAttribute>.Options))!.GetSetMethod()!.Invoke(categoryConfig.Instance, new[] { optionList });
-            }
-
-            _categories = _orderedCategoryTypes.Select(type => _configByCategoryType[type].Instance).ToList();
-        }
-
-        private void EvaluateMetaInfo() {
-            _evaluated = true;
-
-            EvaluateCategories(ReadOptions());
-        }
+        private List<IOptionCategory>                      _optionCategories = null!;
+        private List<(Type ExceptionType, object Handler)> _exceptionHandlers = null!;
 
         private T DoParse(Span<string> args) {
             if (!_evaluated) EvaluateMetaInfo();
@@ -191,45 +24,192 @@ namespace GeminiLab.Core2.CommandLineParser {
                 var current = args[ptr..];
                 int consumed = 0;
 
-                foreach (var cat in _categories) {
-                    consumed = cat.TryConsume(current, rv);
+                try {
+                    foreach (var cat in _optionCategories) {
+                        consumed = cat.TryConsume(current, rv);
 
-                    if (consumed > 0) {
+                        if (consumed > 0) {
+                            break;
+                        }
+                    }
+
+                    if (consumed <= 0) {
+                        // todo: unknown option exception 
+                        throw new DefaultException();
+                    }
+                } catch (ParserException e) {
+                    var eType = e.GetType();
+                    object? eHandler = null;
+
+                    foreach (var (type, handler) in _exceptionHandlers) {
+                        if (eType.IsSubclassOf(type)) {
+                            eHandler = handler;
+                        }
+                    }
+
+                    if (eHandler == null) {
+                        throw;
+                    }
+
+                    var result = (ExceptionHandlerResult) eHandler.GetType().GetMethod(nameof(IExceptionHandler<ParserException>.OnException))!.Invoke(eHandler, new object[] { e });
+
+                    if (result == ExceptionHandlerResult.MayContinue) {
+                        consumed = 1;
+                    } else if (result == ExceptionHandlerResult.MayBreak) {
                         break;
+                    } else {
+                        throw;
                     }
                 }
 
-                if (consumed <= 0) {
-                    // todo: unknown option exception 
-                    throw new FoobarException();
-                }
-                
                 ptr += consumed;
             }
 
             return rv;
         }
+
+        private class ComponentInfo {
+            public ComponentInfo(Type type, Type? configType = null, object? config = null) {
+                Type = type;
+                ConfigType = configType;
+                Config = config;
+            }
+
+            public Type    Type       { get; set; }
+            public Type?   ConfigType { get; set; }
+            public object? Config     { get; set; }
+        }
+
+        private Dictionary<Type, int> _componentIndex = new Dictionary<Type, int>();
+        private List<ComponentInfo>   _components     = new List<ComponentInfo>();
+
+        public CommandLineParser<T> Use<TComponent>()
+            where TComponent : new() {
+            _evaluated = false;
+            
+            var componentType = typeof(TComponent);
+
+            if (_componentIndex.TryGetValue(componentType, out var index)) {
+                _components[index].ConfigType = null;
+                _components[index].Config = null;
+            } else {
+                _componentIndex[componentType] = _components.Count;
+                _components.Add(new ComponentInfo(componentType));
+            }
+
+            return this;
+        }
+
+        public CommandLineParser<T> Use<TComponent, TConfig>(TConfig config)
+            where TComponent : IConfigurable<TConfig>, new() {
+            _evaluated = false;
+            
+            var componentType = typeof(TComponent);
+            var configType = typeof(TConfig);
+
+            if (_componentIndex.TryGetValue(componentType, out var index)) {
+                _components[index].ConfigType = configType;
+                _components[index].Config = config;
+            } else {
+                _componentIndex[componentType] = _components.Count;
+                _components.Add(new ComponentInfo(componentType, configType, config));
+            }
+
+            return this;
+        }
+
+        private List<(MemberInfo MemberInfo, AttributeForParser Attribute)> GetAttributesFromMemberInfos(IEnumerable<MemberInfo> memberInfos) {
+            var result = new List<(MemberInfo MemberInfo, AttributeForParser Attribute)>();
+
+            foreach (var memberInfo in memberInfos) {
+                var attrs = memberInfo.GetCustomAttributes(typeof(AttributeForParser)).ToArray();
+                foreach (var attr in attrs) {
+                    result.Add((memberInfo, (AttributeForParser)attr));
+                }
+            }
+
+            return result;
+        }
+
+        private List<(MemberInfo MemberInfo, AttributeForParser Attribute)> GetAttributes() {
+            var result = new List<(MemberInfo MemberInfo, AttributeForParser Attribute)>();
+
+            var typeOfT = typeof(T);
+            result.AddRange(GetAttributesFromMemberInfos(typeOfT.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)));
+            result.AddRange(GetAttributesFromMemberInfos(typeOfT.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)));
+            result.AddRange(GetAttributesFromMemberInfos(typeOfT.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)));
+
+            return result;
+        }
         
+        private void EvaluateMetaInfo() {
+            _evaluated = true;
+            
+            _optionCategories = new List<IOptionCategory>();
+            _exceptionHandlers = new List<(Type ExceptionType, object Handler)>();
+            
+            var attributes = GetAttributes();
+            
+            foreach (var componentInfo in _components) {
+                var componentType = componentInfo.Type;
+                var instance = Activator.CreateInstance(componentType);
+
+                if (componentInfo.ConfigType != null) {
+                    var configurableType = typeof(IConfigurable<>).MakeGenericType(componentInfo.ConfigType);
+                    configurableType.GetMethod(nameof(IConfigurable<object>.Config))!.Invoke(instance, new[] { componentInfo.Config });
+                }
+                
+                foreach (var ifType in componentType.GetInterfaces()) {
+                    // AttributeCategory
+                    if (ifType.IsConstructedGenericType && ifType.GetGenericTypeDefinition() == typeof(IAttributeCategory<>)) {
+                        var attributeType = ifType.GetGenericArguments()[0];
+                        var mwaType = typeof(IAttributeCategory<>.MemberWithAttribute).MakeGenericType(attributeType);
+                        var mwaListType = typeof(List<>).MakeGenericType(mwaType);
+                        var mwaListAdder = mwaListType.GetMethod(nameof(List<object>.Add))!;
+                        var mwaCtor = mwaType.GetConstructor(new[] { attributeType, typeof(MemberInfo) })!;
+
+                        var mwaList = mwaListType.GetConstructor(Array.Empty<Type>())!.Invoke(Array.Empty<object>());
+
+                        foreach (var (memberInfo, attribute) in attributes) {
+                            if (attributeType.IsInstanceOfType(attribute)) {
+                                mwaListAdder.Invoke(mwaList, new[] { mwaCtor.Invoke(new object[] { attribute, memberInfo }) });
+                            }
+                        }
+
+                        ifType.GetProperty(nameof(IAttributeCategory<AttributeForParser>.Options))!.GetSetMethod().Invoke(instance, new[] { mwaList });
+                    }
+
+                    if (ifType.IsConstructedGenericType && ifType.GetGenericTypeDefinition() == typeof(IExceptionHandler<>)) {
+                        _exceptionHandlers.Add((ifType.GetGenericArguments()[0], instance));
+                    }
+
+                    if (ifType == typeof(IOptionCategory)) {
+                        _optionCategories.Add((IOptionCategory)instance);
+                    }
+                }
+            }
+        }
+
+
         public T ParseFromSpan(ReadOnlySpan<string> args) {
             return DoParse(args.ToArray());
         }
 
         public T Parse(params string[] args) {
-            return DoParse((string[])args.Clone());
+            return DoParse((string[]) args.Clone());
         }
 
         private void LoadDefaultConfigs() {
-            Use<ShortOptionCategory, ShortOptionAttribute, ShortOptionConfig>(new ShortOptionConfig { Prefix = "-" });
-            Use<LongOptionCategory, LongOptionAttribute, LongOptionConfig>(new LongOptionConfig { Prefix = "--", ParameterSeparator = "=" });
-            Use<TailArgumentsCategory, TailArgumentsAttribute, TailArgumentsConfig>(new TailArgumentsConfig { TailMark = "--" });
-            Use<NonOptionArgumentCategory, NonOptionArgumentAttribute>();
+            Use<ShortOptionCategory, ShortOptionConfig>(new ShortOptionConfig { Prefix = "-" });
+            Use<LongOptionCategory, LongOptionConfig>(new LongOptionConfig { Prefix = "--", ParameterSeparator = "=" });
+            Use<TailArgumentsCategory, TailArgumentsConfig>(new TailArgumentsConfig { TailMark = "--" });
+            Use<NonOptionArgumentCategory>();
         }
 
-        public CommandLineParser() : this(false) { }
+        public CommandLineParser() : this(true) { }
 
-        public CommandLineParser(bool disableDefaultConfigs) {
-            if (!disableDefaultConfigs) LoadDefaultConfigs(); 
-            _categories = null!;
+        public CommandLineParser(bool loadDefaultConfigs) {
+            if (loadDefaultConfigs) LoadDefaultConfigs();
         }
     }
 }

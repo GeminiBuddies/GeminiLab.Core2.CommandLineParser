@@ -30,7 +30,7 @@ namespace XUnitTester {
             };
             
             var parser = new CommandLineParser<ClStyleTestOptions>(true)
-                .Use<LongOptionCategory, LongOptionAttribute, LongOptionConfig>(new LongOptionConfig {
+                .Use<LongOptionCategory, LongOptionConfig>(new LongOptionConfig {
                     ParameterSeparator = ":",
                     Prefix = "/",
                 });

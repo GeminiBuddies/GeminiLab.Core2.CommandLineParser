@@ -38,7 +38,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
                         param = args[1];
                         nextStringConsumed = true;
                     } else {
-                        throw new FoobarException();
+                        throw new DefaultException();
                     }
                     
                     SetMember(target, option.Target, param);
@@ -52,7 +52,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
             return nextStringConsumed ? 2 : 1;
         }
 
-        public IEnumerable<IOptionCategory<LongOptionAttribute>.Option> Options {
+        public IEnumerable<IOptionCategory<LongOptionAttribute>.MemberWithAttribute> Options {
             set {
                 foreach (var option in value) {
                     _options[option.Attribute.Option] = new OptionInDefaultCategory(option.Target, option.Attribute.Parameter);
