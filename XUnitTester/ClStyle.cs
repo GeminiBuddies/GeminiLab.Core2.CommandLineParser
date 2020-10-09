@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using GeminiLab.Core2.CommandLineParser;
+using GeminiLab.Core2.CommandLineParser.Custom;
 using GeminiLab.Core2.CommandLineParser.Default;
 using Xunit;
 
@@ -7,9 +8,14 @@ namespace XUnitTester {
     public class ClStyleTestOptions {
         [LongOption("OptionFirst", OptionParameter.Required)]
         public string OptA = null;
-        [LongOption("S")]
-        [LongOption("OptionSecond")]
-        public bool   OptB = false;
+
+        [LongOption("S")] [LongOption("OptionSecond")]
+        public bool OptB = false;
+
+        [UnknownOptionHandler]
+        ExceptionHandlerResult OnUnknownOption(UnknownOptionException exception) {
+            return ExceptionHandlerResult.GracefullyBreak;
+        }
     }
 
     public static class ClStyle {
@@ -27,15 +33,20 @@ namespace XUnitTester {
             var args = new[] {
                 "/OptionFirst:first",
                 "/S",
+                "/Unknown",
+                "/OonFirst:second",
             };
-            
-            var parser = new CommandLineParser<ClStyleTestOptions>(true)
+
+            var parser = new CommandLineParser<ClStyleTestOptions>(false)
+                .Use<LongOptionCategory>() // test duplicated component loading here
                 .Use<LongOptionCategory, LongOptionConfig>(new LongOptionConfig {
                     ParameterSeparator = ":",
                     Prefix = "/",
-                });
+                })
+                .Use<UnknownOptionHandlerComponent>()
+                .Use<UnknownOptionHandlerComponent>();
             var result = parser.Parse(args);
-            
+
             Assert.True(result.OptB);
             Assert.Equal("first", result.OptA);
         }
