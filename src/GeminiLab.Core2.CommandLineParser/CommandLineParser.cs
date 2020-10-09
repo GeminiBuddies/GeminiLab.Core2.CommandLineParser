@@ -37,7 +37,7 @@ namespace GeminiLab.Core2.CommandLineParser {
                         // todo: unknown option exception 
                         throw new DefaultException();
                     }
-                } catch (ParserException e) {
+                } catch (ParsingException e) {
                     var eType = e.GetType();
                     object? eHandler = null;
 
@@ -51,7 +51,7 @@ namespace GeminiLab.Core2.CommandLineParser {
                         throw;
                     }
 
-                    var result = (ExceptionHandlerResult) eHandler.GetType().GetMethod(nameof(IExceptionHandler<ParserException>.OnException))!.Invoke(eHandler, new object[] { e });
+                    var result = (ExceptionHandlerResult) eHandler.GetType().GetMethod(nameof(IExceptionHandler<ParsingException>.OnException))!.Invoke(eHandler, new object[] { e });
 
                     if (result == ExceptionHandlerResult.MayContinue) {
                         consumed = 1;
@@ -118,21 +118,21 @@ namespace GeminiLab.Core2.CommandLineParser {
             return this;
         }
 
-        private List<(MemberInfo MemberInfo, AttributeForParser Attribute)> GetAttributesFromMemberInfos(IEnumerable<MemberInfo> memberInfos) {
-            var result = new List<(MemberInfo MemberInfo, AttributeForParser Attribute)>();
+        private List<(MemberInfo MemberInfo, ParsingAttribute Attribute)> GetAttributesFromMemberInfos(IEnumerable<MemberInfo> memberInfos) {
+            var result = new List<(MemberInfo MemberInfo, ParsingAttribute Attribute)>();
 
             foreach (var memberInfo in memberInfos) {
-                var attrs = memberInfo.GetCustomAttributes(typeof(AttributeForParser)).ToArray();
+                var attrs = memberInfo.GetCustomAttributes(typeof(ParsingAttribute)).ToArray();
                 foreach (var attr in attrs) {
-                    result.Add((memberInfo, (AttributeForParser)attr));
+                    result.Add((memberInfo, (ParsingAttribute)attr));
                 }
             }
 
             return result;
         }
 
-        private List<(MemberInfo MemberInfo, AttributeForParser Attribute)> GetAttributes() {
-            var result = new List<(MemberInfo MemberInfo, AttributeForParser Attribute)>();
+        private List<(MemberInfo MemberInfo, ParsingAttribute Attribute)> GetAttributes() {
+            var result = new List<(MemberInfo MemberInfo, ParsingAttribute Attribute)>();
 
             var typeOfT = typeof(T);
             result.AddRange(GetAttributesFromMemberInfos(typeOfT.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)));
@@ -176,7 +176,7 @@ namespace GeminiLab.Core2.CommandLineParser {
                             }
                         }
 
-                        ifType.GetProperty(nameof(IAttributeCategory<AttributeForParser>.Options))!.GetSetMethod().Invoke(instance, new[] { mwaList });
+                        ifType.GetProperty(nameof(IAttributeCategory<ParsingAttribute>.Options))!.GetSetMethod().Invoke(instance, new[] { mwaList });
                     }
 
                     if (ifType.IsConstructedGenericType && ifType.GetGenericTypeDefinition() == typeof(IExceptionHandler<>)) {

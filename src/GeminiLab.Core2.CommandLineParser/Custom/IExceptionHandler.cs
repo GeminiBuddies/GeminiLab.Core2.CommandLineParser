@@ -5,9 +5,9 @@
         MustThrow   = 2,
     }
 
-    public interface IExceptionHandler<in TException> where TException : ParserException {
+    public interface IExceptionHandler<in TException> where TException : ParsingException {
         ExceptionHandlerResult OnException(TException exception);
     }
 
-    public interface IExceptionHandler<in TException, TAttribute> : IExceptionHandler<TException>, IAttributeCategory<TAttribute> where TException : ParserException where TAttribute : AttributeForParser { }
+    public interface IExceptionHandler<in TException, TAttribute> : IExceptionHandler<TException>, IAttributeCategory<TAttribute> where TException : ParsingException where TAttribute : ParsingAttribute { }
 }

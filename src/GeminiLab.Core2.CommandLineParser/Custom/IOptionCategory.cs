@@ -7,5 +7,5 @@ namespace GeminiLab.Core2.CommandLineParser.Custom {
         int TryConsume(Span<string> args, object target);
     }
     
-    public interface IOptionCategory<TOptionAttribute> : IOptionCategory, IAttributeCategory<TOptionAttribute> where TOptionAttribute : AttributeForParser { }
+    public interface IOptionCategory<TOptionAttribute> : IOptionCategory, IAttributeCategory<TOptionAttribute> where TOptionAttribute : ParsingAttribute { }
 }

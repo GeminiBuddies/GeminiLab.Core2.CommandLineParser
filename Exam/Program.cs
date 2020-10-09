@@ -8,7 +8,7 @@ namespace Exam {
         [LongOption("message", Parameter = OptionParameter.Required)]
         public string Message {
             set {
-                Console.WriteLine($"message set to {value}");
+                Console.WriteLine($"message set to {value ?? "<null>"}");
             }
         }
 
@@ -23,7 +23,7 @@ namespace Exam {
         [LongOption("foo", Parameter = OptionParameter.Optional)]
         public string Foo {
             set {
-                Console.WriteLine($"foo set to {value}");
+                Console.WriteLine($"foo set to {value ?? "<null>"}");
             }
         }
     }
