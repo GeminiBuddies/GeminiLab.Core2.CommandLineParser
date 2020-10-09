@@ -64,6 +64,13 @@ namespace XUnitTester {
             return ExceptionHandlerResult.ContinueParsing;
         }
     }
+    
+    public class DefaultStyleTestOptionC {
+        [UnknownOptionHandler]
+        public ExceptionHandlerResult OnUnknownOption(UnknownOptionException exception) {
+            return ExceptionHandlerResult.CallNextHandler;
+        }
+    }
 
     public static class DefaultStyle {
         private static void AssertLogQueue(Queue<string> logs, params string[] expected) {
@@ -108,6 +115,12 @@ namespace XUnitTester {
 
             Assert.ThrowsAny<Exception>(() => { parser.Parse("-a"); });
             Assert.ThrowsAny<Exception>(() => { parser.Parse("--alpha"); });
+            
+            var parserB = new CommandLineParser<DefaultStyleTestOptionC>(false)
+                .Use<UnknownOptionHandlerComponent>();
+
+            Assert.Throws<UnknownOptionException>(() => { parserB.Parse("-a"); });
+            Assert.Throws<UnknownOptionException>(() => { parserB.Parse("--alpha"); });
         }
     }
 }
