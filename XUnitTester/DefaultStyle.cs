@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using GeminiLab.Core2.CommandLineParser;
+using GeminiLab.Core2.CommandLineParser.Custom;
 using GeminiLab.Core2.CommandLineParser.Default;
 using Xunit;
 
@@ -47,7 +48,7 @@ namespace XUnitTester {
             }
         }
     }
-    
+
     public class DefaultStyleTestOptionB {
         public Queue<string> Logs { get; } = new Queue<string>();
 
@@ -55,6 +56,12 @@ namespace XUnitTester {
         [LongOption("alpha", OptionParameter.Required)]
         public string OptionA {
             set => Logs.Enqueue($"A:{value}");
+        }
+
+        [UnknownOptionHandler]
+        public ExceptionHandlerResult OnUnknownOption(UnknownOptionException exception) {
+            Logs.Enqueue($"UNKNOWN:{exception.Option}");
+            return ExceptionHandlerResult.ContinueParsing;
         }
     }
 
@@ -90,14 +97,17 @@ namespace XUnitTester {
             var result = new CommandLineParser<DefaultStyleTestOptions>().Parse(args);
             AssertLogQueue(result.Logs, "A:x", "B:True", "C:charlie", "B:True", "D:default", "D:d", "D:d", "E:default", "NOA:echo", "E:echo", "E:echo", "TAIL:-ax", "TAIL:bravo");
         }
-        
+
         [Fact]
         public static void Error() {
-            Assert.ThrowsAny<Exception>(() => { new CommandLineParser<DefaultStyleTestOptionB>().Parse("-ax", "--", "-c"); });
-            Assert.ThrowsAny<Exception>(() => { new CommandLineParser<DefaultStyleTestOptionB>().Parse("-ax", "-b", "-c"); });
-            Assert.ThrowsAny<Exception>(() => { new CommandLineParser<DefaultStyleTestOptionB>().Parse("-a"); });
-            Assert.ThrowsAny<Exception>(() => { new CommandLineParser<DefaultStyleTestOptionB>().Parse("--alpha"); });
-            Assert.ThrowsAny<Exception>(() => { new CommandLineParser<DefaultStyleTestOptionB>().Parse("--alpha=1", "--bravo"); });
+            var parser = new CommandLineParser<DefaultStyleTestOptionB>();
+
+            AssertLogQueue(parser.Parse("-ax", "--", "-c").Logs, "A:x", "UNKNOWN:--", "UNKNOWN:-c");
+            AssertLogQueue(parser.Parse("-ax", "-b", "-c").Logs, "A:x", "UNKNOWN:-b", "UNKNOWN:-c");
+            AssertLogQueue(parser.Parse("--alpha=1", "--bravo").Logs, "A:1", "UNKNOWN:--bravo");
+
+            Assert.ThrowsAny<Exception>(() => { parser.Parse("-a"); });
+            Assert.ThrowsAny<Exception>(() => { parser.Parse("--alpha"); });
         }
     }
 }

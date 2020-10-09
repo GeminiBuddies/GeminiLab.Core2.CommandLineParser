@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
 using GeminiLab.Core2.CommandLineParser.Default;
@@ -10,18 +9,19 @@ namespace GeminiLab.Core2.CommandLineParser {
     public class CommandLineParser<T> where T : new() {
         private bool _evaluated = false;
 
-        private List<IOptionCategory>                      _optionCategories = null!;
+        private List<IOptionCategory>                      _optionCategories  = null!;
         private List<(Type ExceptionType, object Handler)> _exceptionHandlers = null!;
 
-        private T DoParse(Span<string> args) {
+        public T ParseFromSpan(ReadOnlySpan<string> args) {
             if (!_evaluated) EvaluateMetaInfo();
 
-            int len = args.Length;
+            var vArgs = args.ToArray().AsSpan();
+            int len = vArgs.Length;
             int ptr = 0;
             var rv = new T();
 
             while (ptr < len) {
-                var current = args[ptr..];
+                var current = vArgs[ptr..];
                 int consumed = 0;
 
                 try {
@@ -34,28 +34,23 @@ namespace GeminiLab.Core2.CommandLineParser {
                     }
 
                     if (consumed <= 0) {
-                        // todo: unknown option exception 
-                        throw new DefaultException();
+                        throw new UnknownOptionException(args.ToArray(), ptr, vArgs[ptr]);
                     }
                 } catch (ParsingException e) {
                     var eType = e.GetType();
-                    object? eHandler = null;
+                    ExceptionHandlerResult finalResult = ExceptionHandlerResult.Throw;
 
                     foreach (var (type, handler) in _exceptionHandlers) {
-                        if (eType.IsSubclassOf(type)) {
-                            eHandler = handler;
+                        if (eType == type || eType.IsSubclassOf(type)) {
+                            finalResult = (ExceptionHandlerResult) handler.GetType().GetMethod(nameof(IExceptionHandler<ParsingException>.OnException))!.Invoke(handler, new object[] { e, rv });
+
+                            if (finalResult != ExceptionHandlerResult.CallNextHandler) break;
                         }
                     }
 
-                    if (eHandler == null) {
-                        throw;
-                    }
-
-                    var result = (ExceptionHandlerResult) eHandler.GetType().GetMethod(nameof(IExceptionHandler<ParsingException>.OnException))!.Invoke(eHandler, new object[] { e });
-
-                    if (result == ExceptionHandlerResult.MayContinue) {
+                    if (finalResult == ExceptionHandlerResult.ContinueParsing) {
                         consumed = 1;
-                    } else if (result == ExceptionHandlerResult.MayBreak) {
+                    } else if (finalResult == ExceptionHandlerResult.GracefullyBreak) {
                         break;
                     } else {
                         throw;
@@ -86,7 +81,7 @@ namespace GeminiLab.Core2.CommandLineParser {
         public CommandLineParser<T> Use<TComponent>()
             where TComponent : new() {
             _evaluated = false;
-            
+
             var componentType = typeof(TComponent);
 
             if (_componentIndex.TryGetValue(componentType, out var index)) {
@@ -103,7 +98,7 @@ namespace GeminiLab.Core2.CommandLineParser {
         public CommandLineParser<T> Use<TComponent, TConfig>(TConfig config)
             where TComponent : IConfigurable<TConfig>, new() {
             _evaluated = false;
-            
+
             var componentType = typeof(TComponent);
             var configType = typeof(TConfig);
 
@@ -124,7 +119,7 @@ namespace GeminiLab.Core2.CommandLineParser {
             foreach (var memberInfo in memberInfos) {
                 var attrs = memberInfo.GetCustomAttributes(typeof(ParsingAttribute)).ToArray();
                 foreach (var attr in attrs) {
-                    result.Add((memberInfo, (ParsingAttribute)attr));
+                    result.Add((memberInfo, (ParsingAttribute) attr));
                 }
             }
 
@@ -141,15 +136,15 @@ namespace GeminiLab.Core2.CommandLineParser {
 
             return result;
         }
-        
+
         private void EvaluateMetaInfo() {
             _evaluated = true;
-            
+
             _optionCategories = new List<IOptionCategory>();
             _exceptionHandlers = new List<(Type ExceptionType, object Handler)>();
-            
+
             var attributes = GetAttributes();
-            
+
             foreach (var componentInfo in _components) {
                 var componentType = componentInfo.Type;
                 var instance = Activator.CreateInstance(componentType);
@@ -158,7 +153,7 @@ namespace GeminiLab.Core2.CommandLineParser {
                     var configurableType = typeof(IConfigurable<>).MakeGenericType(componentInfo.ConfigType);
                     configurableType.GetMethod(nameof(IConfigurable<object>.Config))!.Invoke(instance, new[] { componentInfo.Config });
                 }
-                
+
                 foreach (var ifType in componentType.GetInterfaces()) {
                     // AttributeCategory
                     if (ifType.IsConstructedGenericType && ifType.GetGenericTypeDefinition() == typeof(IAttributeCategory<>)) {
@@ -184,19 +179,14 @@ namespace GeminiLab.Core2.CommandLineParser {
                     }
 
                     if (ifType == typeof(IOptionCategory)) {
-                        _optionCategories.Add((IOptionCategory)instance);
+                        _optionCategories.Add((IOptionCategory) instance);
                     }
                 }
             }
         }
 
-
-        public T ParseFromSpan(ReadOnlySpan<string> args) {
-            return DoParse(args.ToArray());
-        }
-
         public T Parse(params string[] args) {
-            return DoParse((string[]) args.Clone());
+            return ParseFromSpan(args.AsSpan());
         }
 
         private void LoadDefaultConfigs() {
@@ -204,6 +194,8 @@ namespace GeminiLab.Core2.CommandLineParser {
             Use<LongOptionCategory, LongOptionConfig>(new LongOptionConfig { Prefix = "--", ParameterSeparator = "=" });
             Use<TailArgumentsCategory, TailArgumentsConfig>(new TailArgumentsConfig { TailMark = "--" });
             Use<NonOptionArgumentCategory>();
+
+            Use<UnknownOptionHandlerComponent>();
         }
 
         public CommandLineParser() : this(true) { }

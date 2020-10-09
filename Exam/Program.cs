@@ -1,6 +1,7 @@
 using System;
 using GeminiLab.Core2.CommandLineParser.Default;
 using GeminiLab.Core2.CommandLineParser;
+using GeminiLab.Core2.CommandLineParser.Custom;
 
 namespace Exam {
     class A {
@@ -26,13 +27,19 @@ namespace Exam {
                 Console.WriteLine($"foo set to {value ?? "<null>"}");
             }
         }
+
+        [UnknownOptionHandler]
+        public ExceptionHandlerResult OnUnknownOption(UnknownOptionException exception) {
+            Console.WriteLine($"unknown option {exception.Option} at position {exception.Position}");
+            return ExceptionHandlerResult.ContinueParsing;
+        }
     }
 
     class Program {
         public static int Main(string[] args) {
             var parser = new CommandLineParser<A>();
 
-            var a = parser.Parse("-am", "commit message", "-f", "--foo=123", "--foo", "--foo=");
+            var a = parser.Parse("-am", "commit message", "--unexpected", "-f", "--foo=123", "--foo", "--foo=");
 
             return 0;
         }
