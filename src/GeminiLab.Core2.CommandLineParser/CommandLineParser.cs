@@ -13,7 +13,9 @@ namespace GeminiLab.Core2.CommandLineParser {
         private List<(Type ExceptionType, object Handler)> _exceptionHandlers = null!;
 
         public T ParseFromSpan(ReadOnlySpan<string> args) {
-            if (!_evaluated) EvaluateMetaInfo();
+            if (!_evaluated) {
+                EvaluateMetaInfo();
+            }
 
             var vArgs = args.ToArray().AsSpan();
             int len = vArgs.Length;
@@ -38,13 +40,15 @@ namespace GeminiLab.Core2.CommandLineParser {
                     }
                 } catch (ParsingException e) {
                     var eType = e.GetType();
-                    ExceptionHandlerResult finalResult = ExceptionHandlerResult.Throw;
+                    var finalResult = ExceptionHandlerResult.Throw;
 
                     foreach (var (type, handler) in _exceptionHandlers) {
                         if (eType == type || eType.IsSubclassOf(type)) {
                             finalResult = (ExceptionHandlerResult) handler.GetType().GetMethod(nameof(IExceptionHandler<ParsingException>.OnException))!.Invoke(handler, new object[] { e, rv });
 
-                            if (finalResult != ExceptionHandlerResult.CallNextHandler) break;
+                            if (finalResult != ExceptionHandlerResult.CallNextHandler) {
+                                break;
+                            }
                         }
                     }
 
@@ -201,7 +205,9 @@ namespace GeminiLab.Core2.CommandLineParser {
         public CommandLineParser() : this(true) { }
 
         public CommandLineParser(bool loadDefaultConfigs) {
-            if (loadDefaultConfigs) LoadDefaultConfigs();
+            if (loadDefaultConfigs) {
+                LoadDefaultConfigs();
+            }
         }
     }
 }

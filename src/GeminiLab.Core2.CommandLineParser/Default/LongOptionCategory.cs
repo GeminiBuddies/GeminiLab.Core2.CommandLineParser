@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using GeminiLab.Core2.CommandLineParser.Custom;
+using GeminiLab.Core2.CommandLineParser.Util;
 
 namespace GeminiLab.Core2.CommandLineParser.Default {
     public class LongOptionCategory : DefaultCategoryBase, IOptionCategory<LongOptionAttribute>, IConfigurable<LongOptionConfig> {
@@ -9,12 +9,12 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
         private readonly Dictionary<string, OptionInDefaultCategory> _options = new Dictionary<string, OptionInDefaultCategory>();
 
         private LongOptionConfig _config = null!;
-        
+
         public int TryConsume(Span<string> args, object target) {
             if (args[0].Length <= _prefix.Length || !args[0].StartsWith(_prefix)) {
                 return 0;
             }
-            
+
             var content = args[0].AsSpan(_prefix.Length);
             var sepIndex = content.IndexOf(_config.ParameterSeparator.AsSpan());
             var nextStringConsumed = false;
@@ -27,8 +27,8 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
                     if (sepIndex > 0) {
                         param = content[(sepIndex + 1)..].ToString();
                     }
-                    
-                    SetMember(target, option.Target, param);
+
+                    MemberAccessor.SetMember(option.Target, target, param);
                 } else if (option.Parameter == OptionParameter.Required) {
                     var param = "";
 
@@ -40,10 +40,10 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
                     } else {
                         throw new DefaultException();
                     }
-                    
-                    SetMember(target, option.Target, param);
+
+                    MemberAccessor.SetMember(option.Target, target, param);
                 } else { // if (option.Parameter == OptionParameter.None) 
-                    SetMember(target, option.Target);
+                    MemberAccessor.SetMember(option.Target, target);
                 }
             } else {
                 return 0;
