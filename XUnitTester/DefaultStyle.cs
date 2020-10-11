@@ -16,7 +16,7 @@ namespace XUnitTester {
         }
 
         [ShortOption('b')]
-        public bool OptionB {
+        private bool OptionB {
             set => Logs.Enqueue($"B:{value}");
         }
 
@@ -24,7 +24,7 @@ namespace XUnitTester {
         public void OptionBPlus() => Logs.Enqueue($"B:{true}");
 
         [ShortOption('c', OptionParameter.Required)]
-        public void OptionC(string value) => Logs.Enqueue($"C:{value}");
+        private void OptionC(string value) => Logs.Enqueue($"C:{value}");
 
         [ShortOption('d', OptionParameter.Optional)]
         [LongOption("delta", OptionParameter.Optional)]
@@ -34,7 +34,7 @@ namespace XUnitTester {
 
         [ShortOption('e', OptionParameter.Optional)]
         [LongOption("echo", OptionParameter.Required)]
-        public string OptionE {
+        private string OptionE {
             set => Logs.Enqueue($"E:{value ?? "default"}");
         }
 
