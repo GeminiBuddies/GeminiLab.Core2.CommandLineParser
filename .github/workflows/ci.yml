@@ -8,6 +8,7 @@ on:
       - "f/*"
       - "hotfix"
       - "hotfix/*"
+      - "r/*"
   pull_request:
     branches:
       - "master"
