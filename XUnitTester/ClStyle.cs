@@ -12,6 +12,9 @@ namespace XUnitTester {
         [LongOption("S")] [LongOption("OptionSecond")]
         public bool OptB = false;
 
+        [TailArguments]
+        public IEnumerable<string> TailArguments { get; set; } = null;
+        
         [UnknownOptionHandler]
         ExceptionHandlerResult OnUnknownOption(UnknownOptionException exception) {
             return ExceptionHandlerResult.GracefullyBreak;
@@ -40,7 +43,7 @@ namespace XUnitTester {
             var parser = new CommandLineParser<ClStyleTestOptions>(false)
                 .Use<LongOptionCategory>() // test duplicated component loading here
                 .Use<LongOptionCategory, LongOptionConfig>(new LongOptionConfig {
-                    ParameterSeparator = ":",
+                    ParameterDelimiter = ":",
                     Prefix = "/",
                 })
                 .Use<UnknownOptionHandlerComponent>()

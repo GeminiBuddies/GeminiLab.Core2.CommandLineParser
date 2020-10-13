@@ -70,7 +70,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
         }
 
         public void Config(ShortOptionConfig config) {
-            _prefix = config.Prefix[0];
+            _prefix = config.PrefixChar;
             _config = config;
         }
     }
