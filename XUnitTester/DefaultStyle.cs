@@ -104,8 +104,8 @@ namespace XUnitTester {
             AssertLogQueue(parser.Parse("-xz").Logs, "X:True", "UNKNOWN:z");
             AssertLogQueue(parser.Parse("--alpha=1", "--bravo").Logs, "A:1", "UNKNOWN:--bravo");
 
-            Assert.ThrowsAny<Exception>(() => { parser.Parse("-a"); });
-            Assert.ThrowsAny<Exception>(() => { parser.Parse("--alpha"); });
+            Assert.ThrowsAny<Exception>(() => { CommandLineParser<DefaultStyleTestOptionB>.DoParse("-a"); });
+            Assert.ThrowsAny<Exception>(() => { CommandLineParser<DefaultStyleTestOptionB>.DoParse(new[] { "--alpha" }.AsSpan()); });
 
             var parserB = new CommandLineParser<DefaultStyleTestOptionC>(false)
                 .Use<UnknownOptionHandlerComponent>();
