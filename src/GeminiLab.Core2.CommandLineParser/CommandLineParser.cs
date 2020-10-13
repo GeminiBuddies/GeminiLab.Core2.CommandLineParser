@@ -7,64 +7,28 @@ using GeminiLab.Core2.CommandLineParser.Custom;
 
 namespace GeminiLab.Core2.CommandLineParser {
     public class CommandLineParser<T> where T : new() {
+        private static CommandLineParser<T>? _defaultParser = null;
+
+        public static T DoParse(ReadOnlySpan<string> args) {
+            return (_defaultParser ??= new CommandLineParser<T>()).Parse(args);
+        }
+
+        public static T DoParse(params string[] args) {
+            return (_defaultParser ??= new CommandLineParser<T>()).Parse(args);
+        }
+
         private bool _evaluated = false;
 
         private List<IOptionCategory>                      _optionCategories  = null!;
         private List<(Type ExceptionType, object Handler)> _exceptionHandlers = null!;
 
+        [Obsolete("Use method 'Parse' instead")]
         public T ParseFromSpan(ReadOnlySpan<string> args) {
-            if (!_evaluated) {
-                EvaluateMetaInfo();
-            }
+            return Parse(args);
+        }
 
-            var vArgs = args.ToArray().AsSpan();
-            int len = vArgs.Length;
-            int ptr = 0;
-            var rv = new T();
-
-            while (ptr < len) {
-                var current = vArgs[ptr..];
-                int consumed = 0;
-
-                try {
-                    foreach (var cat in _optionCategories) {
-                        consumed = cat.TryConsume(current, rv);
-
-                        if (consumed > 0) {
-                            break;
-                        }
-                    }
-
-                    if (consumed <= 0) {
-                        throw new UnknownOptionException(args.ToArray(), ptr, vArgs[ptr]);
-                    }
-                } catch (ParsingException e) {
-                    var eType = e.GetType();
-                    var finalResult = ExceptionHandlerResult.Throw;
-
-                    foreach (var (type, handler) in _exceptionHandlers) {
-                        if (eType == type || eType.IsSubclassOf(type)) {
-                            finalResult = (ExceptionHandlerResult) handler.GetType().GetMethod(nameof(IExceptionHandler<ParsingException>.OnException))!.Invoke(handler, new object[] { e, rv });
-
-                            if (finalResult != ExceptionHandlerResult.CallNextHandler) {
-                                break;
-                            }
-                        }
-                    }
-
-                    if (finalResult == ExceptionHandlerResult.ContinueParsing) {
-                        consumed = 1;
-                    } else if (finalResult == ExceptionHandlerResult.GracefullyBreak) {
-                        break;
-                    } else {
-                        throw;
-                    }
-                }
-
-                ptr += consumed;
-            }
-
-            return rv;
+        public T Parse(ReadOnlySpan<string> args) {
+            return Parse(args.ToArray());
         }
 
         private class ComponentInfo {
@@ -190,7 +154,58 @@ namespace GeminiLab.Core2.CommandLineParser {
         }
 
         public T Parse(params string[] args) {
-            return ParseFromSpan(args.AsSpan());
+            if (!_evaluated) {
+                EvaluateMetaInfo();
+            }
+
+            var workplace = args.ToArray().AsSpan();
+            int len = workplace.Length;
+            int ptr = 0;
+            var rv = new T();
+
+            while (ptr < len) {
+                var current = workplace[ptr..];
+                int consumed = 0;
+
+                try {
+                    foreach (var cat in _optionCategories) {
+                        consumed = cat.TryConsume(current, rv);
+
+                        if (consumed > 0) {
+                            break;
+                        }
+                    }
+
+                    if (consumed <= 0) {
+                        throw new UnknownOptionException(args.ToArray(), ptr, workplace[ptr]);
+                    }
+                } catch (ParsingException e) {
+                    var eType = e.GetType();
+                    var finalResult = ExceptionHandlerResult.Throw;
+
+                    foreach (var (type, handler) in _exceptionHandlers) {
+                        if (eType == type || eType.IsSubclassOf(type)) {
+                            finalResult = (ExceptionHandlerResult) handler.GetType().GetMethod(nameof(IExceptionHandler<ParsingException>.OnException))!.Invoke(handler, new object[] { e, rv });
+
+                            if (finalResult != ExceptionHandlerResult.CallNextHandler) {
+                                break;
+                            }
+                        }
+                    }
+
+                    if (finalResult == ExceptionHandlerResult.ContinueParsing) {
+                        consumed = 1;
+                    } else if (finalResult == ExceptionHandlerResult.GracefullyBreak) {
+                        break;
+                    } else {
+                        throw;
+                    }
+                }
+
+                ptr += consumed;
+            }
+
+            return rv;
         }
 
         private void LoadDefaultConfigs() {
