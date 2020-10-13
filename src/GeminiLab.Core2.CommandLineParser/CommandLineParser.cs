@@ -103,6 +103,24 @@ namespace GeminiLab.Core2.CommandLineParser {
             return this;
         }
 
+        public CommandLineParser<T> Use<TComponent>(object config)
+            where TComponent : new() {
+            _evaluated = false;
+
+            var componentType = typeof(TComponent);
+            var configType = config.GetType();
+
+            if (_componentIndex.TryGetValue(componentType, out var index)) {
+                _components[index].ConfigType = configType;
+                _components[index].Config = config;
+            } else {
+                _componentIndex[componentType] = _components.Count;
+                _components.Add(new ComponentInfo(componentType, configType, config));
+            }
+
+            return this;
+        }
+
         public CommandLineParser<T> Use<TComponent, TConfig>(TConfig config)
             where TComponent : IConfigurable<TConfig>, new() {
             _evaluated = false;
