@@ -54,7 +54,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
             }
 
             if (ptr < len) {
-                args[0] = args[0][ptr..];
+                if (ptr > 0) args[0] = args[0][(ptr + 1)..];
                 return 0;
             }
 

@@ -31,7 +31,7 @@ namespace GeminiLab.Core2.CommandLineParser.Util {
             Assert(property.CanWrite);
             Assert(property.PropertyType.IsAssignableFrom(typeof(T)));
 
-            property.GetSetMethod().Invoke(target, new object?[] { value });
+            property.GetSetMethod(true).Invoke(target, new object?[] { value });
         }
 
         public static void SetField<T>(FieldInfo field, object target, T value) {

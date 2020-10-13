@@ -16,7 +16,7 @@ namespace XUnitTester {
         }
 
         [ShortOption('b')]
-        public bool OptionB {
+        private bool OptionB {
             set => Logs.Enqueue($"B:{value}");
         }
 
@@ -24,7 +24,7 @@ namespace XUnitTester {
         public void OptionBPlus() => Logs.Enqueue($"B:{true}");
 
         [ShortOption('c', OptionParameter.Required)]
-        public void OptionC(string value) => Logs.Enqueue($"C:{value}");
+        private void OptionC(string value) => Logs.Enqueue($"C:{value}");
 
         [ShortOption('d', OptionParameter.Optional)]
         [LongOption("delta", OptionParameter.Optional)]
@@ -34,7 +34,7 @@ namespace XUnitTester {
 
         [ShortOption('e', OptionParameter.Optional)]
         [LongOption("echo", OptionParameter.Required)]
-        public string OptionE {
+        private string OptionE {
             set => Logs.Enqueue($"E:{value ?? "default"}");
         }
 
@@ -58,13 +58,19 @@ namespace XUnitTester {
             set => Logs.Enqueue($"A:{value}");
         }
 
+        [ShortOption('x')]
+        [LongOption("x-ray")]
+        public bool OptionX {
+            set => Logs.Enqueue($"X:{value}");
+        }
+
         [UnknownOptionHandler]
         public ExceptionHandlerResult OnUnknownOption(UnknownOptionException exception) {
             Logs.Enqueue($"UNKNOWN:{exception.Option}");
             return ExceptionHandlerResult.ContinueParsing;
         }
     }
-    
+
     public class DefaultStyleTestOptionC {
         [UnknownOptionHandler]
         public ExceptionHandlerResult OnUnknownOption(UnknownOptionException exception) {
@@ -84,23 +90,7 @@ namespace XUnitTester {
 
         [Fact]
         public static void Normal() {
-            var args = new[] {
-                "-ax",
-                "-bc",
-                "charlie",
-                "--bravo",
-                "-d",
-                "-dd",
-                "--delta=d",
-                "-e",
-                "echo",
-                "--echo",
-                "echo",
-                "--echo=echo",
-                "--",
-                "-ax",
-                "bravo",
-            };
+            var args = new[] { "-ax", "-bc", "charlie", "--bravo", "-d", "-dd", "--delta=d", "-e", "echo", "--echo", "echo", "--echo=echo", "--", "-ax", "bravo", };
             var result = new CommandLineParser<DefaultStyleTestOptions>().Parse(args);
             AssertLogQueue(result.Logs, "A:x", "B:True", "C:charlie", "B:True", "D:default", "D:d", "D:d", "E:default", "NOA:echo", "E:echo", "E:echo", "TAIL:-ax", "TAIL:bravo");
         }
@@ -111,11 +101,12 @@ namespace XUnitTester {
 
             AssertLogQueue(parser.Parse("-ax", "--", "-c").Logs, "A:x", "UNKNOWN:--", "UNKNOWN:-c");
             AssertLogQueue(parser.Parse("-ax", "-b", "-c").Logs, "A:x", "UNKNOWN:-b", "UNKNOWN:-c");
+            AssertLogQueue(parser.Parse("-xz").Logs, "X:True", "UNKNOWN:z");
             AssertLogQueue(parser.Parse("--alpha=1", "--bravo").Logs, "A:1", "UNKNOWN:--bravo");
 
             Assert.ThrowsAny<Exception>(() => { parser.Parse("-a"); });
             Assert.ThrowsAny<Exception>(() => { parser.Parse("--alpha"); });
-            
+
             var parserB = new CommandLineParser<DefaultStyleTestOptionC>(false)
                 .Use<UnknownOptionHandlerComponent>();
 

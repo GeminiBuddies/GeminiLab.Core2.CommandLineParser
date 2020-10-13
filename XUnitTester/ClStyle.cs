@@ -34,7 +34,7 @@ namespace XUnitTester {
                 "/OptionFirst:first",
                 "/S",
                 "/Unknown",
-                "/OonFirst:second",
+                "/OptionFirst:second",
             };
 
             var parser = new CommandLineParser<ClStyleTestOptions>(false)
