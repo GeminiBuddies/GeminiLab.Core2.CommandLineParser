@@ -82,6 +82,10 @@ namespace GeminiLab.Core2.CommandLineParser {
         private Dictionary<Type, int> _componentIndex = new Dictionary<Type, int>();
         private List<ComponentInfo>   _components     = new List<ComponentInfo>();
 
+        private ComponentInfo? FindComponentByConfigType(Type configType) {
+            return _components.FirstOrDefault(info => info.ConfigType == configType);
+        }
+
         public CommandLineParser<T> Use<TComponent>()
             where TComponent : new() {
             _evaluated = false;
@@ -112,6 +116,44 @@ namespace GeminiLab.Core2.CommandLineParser {
             } else {
                 _componentIndex[componentType] = _components.Count;
                 _components.Add(new ComponentInfo(componentType, configType, config));
+            }
+
+            return this;
+        }
+
+        public CommandLineParser<T> Config(object config) {
+            var componentInfo = FindComponentByConfigType(config.GetType());
+
+            if (componentInfo != null) componentInfo.Config = config;
+
+            return this;
+        }
+
+        public CommandLineParser<T> Config<TConfig>(TConfig config) {
+            var componentInfo = FindComponentByConfigType(typeof(TConfig));
+
+            if (componentInfo != null) componentInfo.Config = config;
+
+            return this;
+        }
+
+        public CommandLineParser<T> Config<TComponent>(object config) {
+            if (_componentIndex.TryGetValue(typeof(TComponent), out var index)) {
+                var component = _components[index];
+
+                component.ConfigType = config.GetType();
+                component.Config = config;
+            }
+
+            return this;
+        }
+
+        public CommandLineParser<T> Config<TComponent, TConfig>(TConfig config) {
+            if (_componentIndex.TryGetValue(typeof(TComponent), out var index)) {
+                var component = _components[index];
+
+                component.ConfigType = typeof(TConfig);
+                component.Config = config;
             }
 
             return this;
@@ -194,9 +236,10 @@ namespace GeminiLab.Core2.CommandLineParser {
         }
 
         private void LoadDefaultConfigs() {
-            Use<ShortOptionCategory, ShortOptionConfig>(new ShortOptionConfig { Prefix = "-" });
-            Use<LongOptionCategory, LongOptionConfig>(new LongOptionConfig { Prefix = "--", ParameterSeparator = "=" });
-            Use<TailArgumentsCategory, TailArgumentsConfig>(new TailArgumentsConfig { TailMark = "--" });
+            // for default values of config items, see definition of config classes
+            Use<ShortOptionCategory, ShortOptionConfig>(new ShortOptionConfig());
+            Use<LongOptionCategory, LongOptionConfig>(new LongOptionConfig());
+            Use<TailArgumentsCategory, TailArgumentsConfig>(new TailArgumentsConfig());
             Use<NonOptionArgumentCategory>();
 
             Use<UnknownOptionHandlerComponent>();
