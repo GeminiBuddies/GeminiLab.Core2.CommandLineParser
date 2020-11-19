@@ -16,7 +16,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
             }
 
             var content = args[0].AsSpan(_prefix.Length);
-            var sepIndex = content.IndexOf(_config.ParameterSeparator.AsSpan());
+            var sepIndex = content.IndexOf(_config.ParameterDelimiter.AsSpan());
             var nextStringConsumed = false;
 
             var optionStr = (sepIndex > 0 ? content[..sepIndex] : content).ToString();
