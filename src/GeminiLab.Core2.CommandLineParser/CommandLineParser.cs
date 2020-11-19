@@ -155,7 +155,8 @@ namespace GeminiLab.Core2.CommandLineParser {
             return this;
         }
 
-        public CommandLineParser<T> Config<TComponent>(object config) {
+        public CommandLineParser<T> Config<TComponent>(object config)
+            where TComponent : new() {
             if (_componentIndex.TryGetValue(typeof(TComponent), out var index)) {
                 var component = _components[index];
 
@@ -166,7 +167,8 @@ namespace GeminiLab.Core2.CommandLineParser {
             return this;
         }
 
-        public CommandLineParser<T> Config<TComponent, TConfig>(TConfig config) {
+        public CommandLineParser<T> Config<TComponent, TConfig>(TConfig config)
+            where TComponent : IConfigurable<TConfig>, new() {
             if (_componentIndex.TryGetValue(typeof(TComponent), out var index)) {
                 var component = _components[index];
 

@@ -14,7 +14,7 @@ namespace XUnitTester {
 
         [TailArguments]
         public IEnumerable<string> TailArguments { get; set; } = null;
-        
+
         [UnknownOptionHandler]
         ExceptionHandlerResult OnUnknownOption(UnknownOptionException exception) {
             return ExceptionHandlerResult.GracefullyBreak;
