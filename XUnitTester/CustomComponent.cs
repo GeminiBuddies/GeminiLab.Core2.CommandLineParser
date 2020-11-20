@@ -54,7 +54,7 @@ namespace XUnitTester {
 
             var parser = new CommandLineParser<WowOption>(false)
 #pragma warning disable 618
-                .Use<ShortOptionCategory>((object) new ShortOptionConfig { Prefix = "/" })
+                .Use<ShortOptionCategory>((object) new ShortOptionConfig { PrefixChar = '/' })
 #pragma warning restore 618
                 .Use<WowComponent>()
                 .Config<WowComponent, WowConfig>(new WowConfig { WowInvoker = wowInvoker });
