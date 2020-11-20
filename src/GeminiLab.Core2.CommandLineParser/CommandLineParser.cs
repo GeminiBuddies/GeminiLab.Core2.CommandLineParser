@@ -23,11 +23,6 @@ namespace GeminiLab.Core2.CommandLineParser {
         private List<(Type ExceptionType, object Handler)> _exceptionHandlers = null!;
         private List<IParsingHook>                         _hooks             = null!;
 
-        [Obsolete("Use method 'Parse' instead")]
-        public T ParseFromSpan(ReadOnlySpan<string> args) {
-            return Parse(args);
-        }
-
         public T Parse(ReadOnlySpan<string> args) {
             return Parse(args.ToArray());
         }
