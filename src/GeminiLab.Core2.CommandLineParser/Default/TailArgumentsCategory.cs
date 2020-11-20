@@ -6,7 +6,7 @@ using GeminiLab.Core2.CommandLineParser.Custom;
 using GeminiLab.Core2.CommandLineParser.Util;
 
 namespace GeminiLab.Core2.CommandLineParser.Default {
-    public class TailArgumentsCategory : DefaultCategoryBase, IOptionCategory<TailArgumentsAttribute>, IConfigurable<TailArgumentsConfig> {
+    public class TailArgumentsCategory : IOptionCategory<TailArgumentsAttribute>, IConfigurable<TailArgumentsConfig> {
         private MemberInfo? _memberInfo;
         private string      _tailMark = null!;
 
