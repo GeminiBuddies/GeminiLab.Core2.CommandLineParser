@@ -9,8 +9,7 @@ namespace XUnitTester {
     public class DefaultStyleTestOptions {
         public Queue<string> Logs { get; } = new Queue<string>();
 
-        [ShortOption('a', OptionParameter.Required)]
-        [LongOption("alpha", OptionParameter.Required)]
+        [ShortOption('a'), LongOption("alpha"), ParameterRequired]
         public string OptionA {
             set => Logs.Enqueue($"A:{value}");
         }
@@ -23,17 +22,15 @@ namespace XUnitTester {
         [LongOption("bravo")]
         public void OptionBPlus() => Logs.Enqueue($"B:{true}");
 
-        [ShortOption('c', OptionParameter.Required)]
+        [ShortOption('c'), ParameterRequired]
         private void OptionC(string value) => Logs.Enqueue($"C:{value}");
 
-        [ShortOption('d', OptionParameter.Optional)]
-        [LongOption("delta", OptionParameter.Optional)]
+        [ShortOption('d'), LongOption("delta"), ParameterOptional]
         public string OptionD {
             set => Logs.Enqueue($"D:{value ?? "default"}");
         }
 
-        [ShortOption('e', OptionParameter.Optional)]
-        [LongOption("echo", OptionParameter.Required)]
+        [ShortOption('e'), LongOption("echo"), ParameterRequired]
         private string OptionE {
             set => Logs.Enqueue($"E:{value ?? "default"}");
         }
@@ -52,14 +49,12 @@ namespace XUnitTester {
     public class DefaultStyleTestOptionB {
         public Queue<string> Logs { get; } = new Queue<string>();
 
-        [ShortOption('a', OptionParameter.Required)]
-        [LongOption("alpha", OptionParameter.Required)]
+        [ShortOption('a'), LongOption("alpha"), ParameterRequired]
         public string OptionA {
             set => Logs.Enqueue($"A:{value}");
         }
 
-        [ShortOption('x')]
-        [LongOption("x-ray")]
+        [ShortOption('x'), LongOption("x-ray")]
         public bool OptionX {
             set => Logs.Enqueue($"X:{value}");
         }
@@ -90,9 +85,9 @@ namespace XUnitTester {
 
         [Fact]
         public static void Normal() {
-            var args = new[] { "-ax", "-bc", "charlie", "--bravo", "-d", "-dd", "--delta=d", "-e", "echo", "--echo", "echo", "--echo=echo", "--", "-ax", "bravo", };
+            var args = new[] { "-ax", "-bc", "charlie", "--bravo", "-d", "-dd", "--delta=d", "-e", "echo", "--echo", "echo", "--echo=echo", "echo", "--", "-ax", "bravo", };
             var result = new CommandLineParser<DefaultStyleTestOptions>().Parse(args);
-            AssertLogQueue(result.Logs, "A:x", "B:True", "C:charlie", "B:True", "D:default", "D:d", "D:d", "E:default", "NOA:echo", "E:echo", "E:echo", "TAIL:-ax", "TAIL:bravo");
+            AssertLogQueue(result.Logs, "A:x", "B:True", "C:charlie", "B:True", "D:default", "D:d", "D:d", "E:echo", "E:echo", "E:echo", "NOA:echo", "TAIL:-ax", "TAIL:bravo");
         }
 
         [Fact]

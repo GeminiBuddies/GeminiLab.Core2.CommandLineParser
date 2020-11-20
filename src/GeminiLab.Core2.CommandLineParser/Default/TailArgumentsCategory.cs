@@ -6,7 +6,7 @@ using GeminiLab.Core2.CommandLineParser.Custom;
 using GeminiLab.Core2.CommandLineParser.Util;
 
 namespace GeminiLab.Core2.CommandLineParser.Default {
-    public class TailArgumentsCategory : DefaultCategoryBase, IOptionCategory<TailArgumentsAttribute>, IConfigurable<TailArgumentsConfig> {
+    public class TailArgumentsCategory : IOptionCategory<TailArgumentsAttribute>, IConfigurable<TailArgumentsConfig> {
         private MemberInfo? _memberInfo;
         private string      _tailMark = null!;
 
@@ -23,8 +23,8 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
             return args.Length;
         }
 
-        public IEnumerable<MemberWithAttribute<TailArgumentsAttribute>> Options {
-            set => _memberInfo = value.FirstOrDefault()?.Target;
+        public void SetAttributedMembers(IEnumerable<AttributedMember<TailArgumentsAttribute>> members) {
+            _memberInfo = members.FirstOrDefault()?.Target;
         }
 
         public void Config(TailArgumentsConfig config) {

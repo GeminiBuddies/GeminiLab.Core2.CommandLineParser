@@ -185,7 +185,7 @@ namespace GeminiLab.Core2.CommandLineParser {
                     // AttributeCategory
                     if (ifType.IsConstructedGenericType && ifType.GetGenericTypeDefinition() == typeof(IAttributeCategory<>)) {
                         var attributeType = ifType.GetGenericArguments()[0];
-                        var mwaType = typeof(MemberWithAttribute<>).MakeGenericType(attributeType);
+                        var mwaType = typeof(AttributedMember<>).MakeGenericType(attributeType);
                         var mwaListType = typeof(List<>).MakeGenericType(mwaType);
                         var mwaListAdder = mwaListType.GetMethod(nameof(List<object>.Add))!;
                         var mwaCtor = mwaType.GetConstructor(new[] { attributeType, typeof(MemberInfo) })!;
@@ -198,7 +198,7 @@ namespace GeminiLab.Core2.CommandLineParser {
                             }
                         }
 
-                        ifType.GetProperty(nameof(IAttributeCategory<ParsingAttribute>.Options))!.GetSetMethod().Invoke(instance, new[] { mwaList });
+                        ifType.GetMethod(nameof(IAttributeCategory<ParsingAttribute>.SetAttributedMembers))!.Invoke(instance, new[] { mwaList });
                     }
 
                     if (ifType.IsConstructedGenericType && ifType.GetGenericTypeDefinition() == typeof(IExceptionHandler<>)) {
@@ -277,8 +277,7 @@ namespace GeminiLab.Core2.CommandLineParser {
 
         private void LoadDefaultConfigs() {
             // for default values of config items, see definition of config classes
-            Use<ShortOptionCategory, ShortOptionConfig>(new ShortOptionConfig());
-            Use<LongOptionCategory, LongOptionConfig>(new LongOptionConfig());
+            Use<OptionComponent, OptionConfig>(new OptionConfig());
             Use<TailArgumentsCategory, TailArgumentsConfig>(new TailArgumentsConfig());
             Use<NonOptionArgumentCategory>();
 

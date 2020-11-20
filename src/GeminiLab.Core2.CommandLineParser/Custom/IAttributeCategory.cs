@@ -2,17 +2,19 @@
 using System.Reflection;
 
 namespace GeminiLab.Core2.CommandLineParser.Custom {
-    public class MemberWithAttribute<TAttribute> where TAttribute : ParsingAttribute {
+    public class AttributedMember<TAttribute> where TAttribute : ParsingAttribute {
         public TAttribute Attribute { get; set; }
         public MemberInfo Target    { get; set; }
 
-        public MemberWithAttribute(TAttribute attribute, MemberInfo target) {
+        public AttributedMember(TAttribute attribute, MemberInfo target) {
             Attribute = attribute;
             Target = target;
         }
+
+        public void Deconstruct(out TAttribute attribute, out MemberInfo target) => (attribute, target) = (Attribute, Target);
     }
 
     public interface IAttributeCategory<TAttribute> where TAttribute : ParsingAttribute {
-        IEnumerable<MemberWithAttribute<TAttribute>> Options { set; }
+        void SetAttributedMembers(IEnumerable<AttributedMember<TAttribute>> members);
     }
 }

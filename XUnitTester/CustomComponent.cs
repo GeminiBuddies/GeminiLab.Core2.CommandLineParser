@@ -34,8 +34,8 @@ namespace XUnitTester {
             return 0;
         }
 
-        public IEnumerable<MemberWithAttribute<WowAttribute>> Options {
-            set { _setter = (obj, str) => { MemberAccessor.SetMember(value.FirstOrDefault()?.Target ?? throw new InvalidOperationException(), obj, str); }; }
+        public void SetAttributedMembers(IEnumerable<AttributedMember<WowAttribute>> members) {
+            _setter = (obj, str) => { MemberAccessor.SetMember(members.FirstOrDefault()?.Target ?? throw new InvalidOperationException(), obj, str); };
         }
     }
 
@@ -53,9 +53,7 @@ namespace XUnitTester {
             const string wowInvoker = "ready?";
 
             var parser = new CommandLineParser<WowOption>(false)
-#pragma warning disable 618
-                .Use<ShortOptionCategory>((object) new ShortOptionConfig { PrefixChar = '/' })
-#pragma warning restore 618
+                .Use<OptionComponent, OptionConfig>(new OptionConfig { ShortPrefix = '/', LongPrefix = "" })
                 .Use<WowComponent>()
                 .Config<WowComponent, WowConfig>(new WowConfig { WowInvoker = wowInvoker });
 
