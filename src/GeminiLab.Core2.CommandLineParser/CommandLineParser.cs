@@ -21,6 +21,7 @@ namespace GeminiLab.Core2.CommandLineParser {
 
         private List<IOptionCategory>                      _optionCategories  = null!;
         private List<(Type ExceptionType, object Handler)> _exceptionHandlers = null!;
+        private List<IParsingHook>                         _hooks             = null!;
 
         [Obsolete("Use method 'Parse' instead")]
         public T ParseFromSpan(ReadOnlySpan<string> args) {
@@ -172,6 +173,7 @@ namespace GeminiLab.Core2.CommandLineParser {
 
             _optionCategories = new List<IOptionCategory>();
             _exceptionHandlers = new List<(Type ExceptionType, object Handler)>();
+            _hooks = new List<IParsingHook>();
 
             var attributes = GetAttributes();
 
@@ -211,6 +213,10 @@ namespace GeminiLab.Core2.CommandLineParser {
                     if (ifType == typeof(IOptionCategory)) {
                         _optionCategories.Add((IOptionCategory) instance);
                     }
+
+                    if (ifType == typeof(IParsingHook)) {
+                        _hooks.Add((IParsingHook) instance);
+                    }
                 }
             }
         }
@@ -224,6 +230,8 @@ namespace GeminiLab.Core2.CommandLineParser {
             int len = workplace.Length;
             int ptr = 0;
             var rv = new T();
+
+            _hooks.ForEach(h => h.OnParsingEvent(ParsingEvent.PreParsing, rv));
 
             while (ptr < len) {
                 var current = workplace[ptr..];
@@ -267,6 +275,8 @@ namespace GeminiLab.Core2.CommandLineParser {
                 ptr += consumed;
             }
 
+            _hooks.ForEach(h => h.OnParsingEvent(ParsingEvent.PostParsing, rv));
+
             return rv;
         }
 
@@ -277,6 +287,7 @@ namespace GeminiLab.Core2.CommandLineParser {
             Use<TailArgumentsCategory, TailArgumentsConfig>(new TailArgumentsConfig());
             Use<NonOptionArgumentCategory>();
 
+            Use<LifecycleHookComponent>();
             Use<UnknownOptionHandlerComponent>();
         }
 
