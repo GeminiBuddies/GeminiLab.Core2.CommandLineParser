@@ -34,7 +34,7 @@ namespace XUnitTester {
             return 0;
         }
 
-        public IEnumerable<IAttributeCategory<WowAttribute>.MemberWithAttribute> Options {
+        public IEnumerable<MemberWithAttribute<WowAttribute>> Options {
             set { _setter = (obj, str) => { MemberAccessor.SetMember(value.FirstOrDefault()?.Target ?? throw new InvalidOperationException(), obj, str); }; }
         }
     }

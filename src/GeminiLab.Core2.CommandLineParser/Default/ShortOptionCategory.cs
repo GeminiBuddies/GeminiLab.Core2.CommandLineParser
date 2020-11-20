@@ -61,7 +61,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
             return nextStringConsumed ? 2 : 1;
         }
 
-        public IEnumerable<IOptionCategory<ShortOptionAttribute>.MemberWithAttribute> Options {
+        public IEnumerable<MemberWithAttribute<ShortOptionAttribute>> Options {
             set {
                 foreach (var option in value) {
                     _options[option.Attribute.Option] = new OptionInDefaultCategory(option.Target, option.Attribute.Parameter);

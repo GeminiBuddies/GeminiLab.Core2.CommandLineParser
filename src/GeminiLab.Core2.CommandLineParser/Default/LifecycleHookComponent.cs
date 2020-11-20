@@ -16,11 +16,11 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
             })?.Invoke(target, Array.Empty<object>());
         }
 
-        IEnumerable<IAttributeCategory<PreParsingAttribute>.MemberWithAttribute> IAttributeCategory<PreParsingAttribute>.Options {
+        IEnumerable<MemberWithAttribute<PreParsingAttribute>> IAttributeCategory<PreParsingAttribute>.Options {
             set { _pre = value.Select(mwa => mwa.Target).OfType<MethodInfo>().FirstOrDefault(); }
         }
 
-        IEnumerable<IAttributeCategory<PostParsingAttribute>.MemberWithAttribute> IAttributeCategory<PostParsingAttribute>.Options {
+        IEnumerable<MemberWithAttribute<PostParsingAttribute>> IAttributeCategory<PostParsingAttribute>.Options {
             set { _post = value.Select(mwa => mwa.Target).OfType<MethodInfo>().FirstOrDefault(); }
         }
     }

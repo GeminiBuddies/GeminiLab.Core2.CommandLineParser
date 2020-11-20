@@ -190,7 +190,7 @@ namespace GeminiLab.Core2.CommandLineParser {
                     // AttributeCategory
                     if (ifType.IsConstructedGenericType && ifType.GetGenericTypeDefinition() == typeof(IAttributeCategory<>)) {
                         var attributeType = ifType.GetGenericArguments()[0];
-                        var mwaType = typeof(IAttributeCategory<>.MemberWithAttribute).MakeGenericType(attributeType);
+                        var mwaType = typeof(MemberWithAttribute<>).MakeGenericType(attributeType);
                         var mwaListType = typeof(List<>).MakeGenericType(mwaType);
                         var mwaListAdder = mwaListType.GetMethod(nameof(List<object>.Add))!;
                         var mwaCtor = mwaType.GetConstructor(new[] { attributeType, typeof(MemberInfo) })!;

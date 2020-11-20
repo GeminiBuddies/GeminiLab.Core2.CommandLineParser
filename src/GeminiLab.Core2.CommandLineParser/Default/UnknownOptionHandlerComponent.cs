@@ -16,7 +16,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
             return MemberAccessor.InvokeFunction<UnknownOptionException, ExceptionHandlerResult>(_handler, target, exception);
         }
 
-        public IEnumerable<IAttributeCategory<UnknownOptionHandlerAttribute>.MemberWithAttribute> Options {
+        public IEnumerable<MemberWithAttribute<UnknownOptionHandlerAttribute>> Options {
             set => _handler = value.Select(x => x.Target).OfType<MethodInfo>().FirstOrDefault();
         }
     }
