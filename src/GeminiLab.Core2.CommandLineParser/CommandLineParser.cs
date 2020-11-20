@@ -46,57 +46,33 @@ namespace GeminiLab.Core2.CommandLineParser {
             return _components.FirstOrDefault(info => info.ConfigType == configType);
         }
 
-        public CommandLineParser<T> Use<TComponent>()
-            where TComponent : new() {
+        private CommandLineParser<T> use(Type componentType, Type? configType, object? config) {
             _evaluated = false;
 
-            var componentType = typeof(TComponent);
-
             if (_componentIndex.TryGetValue(componentType, out var index)) {
-                _components[index].ConfigType = null;
-                _components[index].Config = null;
+                _components[index].ConfigType = configType;
+                _components[index].Config = config;
             } else {
                 _componentIndex[componentType] = _components.Count;
-                _components.Add(new ComponentInfo(componentType));
+                _components.Add(new ComponentInfo(componentType, configType, config));
             }
 
             return this;
+        }
+        
+        public CommandLineParser<T> Use<TComponent>()
+            where TComponent : new() {
+            return use(typeof(TComponent), null, null);
         }
 
         public CommandLineParser<T> Use<TComponent>(object config)
             where TComponent : new() {
-            _evaluated = false;
-
-            var componentType = typeof(TComponent);
-            var configType = config.GetType();
-
-            if (_componentIndex.TryGetValue(componentType, out var index)) {
-                _components[index].ConfigType = configType;
-                _components[index].Config = config;
-            } else {
-                _componentIndex[componentType] = _components.Count;
-                _components.Add(new ComponentInfo(componentType, configType, config));
-            }
-
-            return this;
+            return use(typeof(TComponent), config.GetType(), config);
         }
 
         public CommandLineParser<T> Use<TComponent, TConfig>(TConfig config)
             where TComponent : IConfigurable<TConfig>, new() {
-            _evaluated = false;
-
-            var componentType = typeof(TComponent);
-            var configType = typeof(TConfig);
-
-            if (_componentIndex.TryGetValue(componentType, out var index)) {
-                _components[index].ConfigType = configType;
-                _components[index].Config = config;
-            } else {
-                _componentIndex[componentType] = _components.Count;
-                _components.Add(new ComponentInfo(componentType, configType, config));
-            }
-
-            return this;
+            return use(typeof(TComponent), typeof(TConfig), config);
         }
 
         public CommandLineParser<T> Config(object config) {
