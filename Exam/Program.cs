@@ -5,8 +5,7 @@ using GeminiLab.Core2.CommandLineParser.Custom;
 
 namespace Exam {
     class A {
-        [ShortOption('m', Parameter = OptionParameter.Required)]
-        [LongOption("message", Parameter = OptionParameter.Required)]
+        [ShortOption('m'), LongOption("message"), ParameterRequired]
         public string Message {
             set {
                 Console.WriteLine($"message set to {value ?? "<null>"}");
@@ -20,8 +19,7 @@ namespace Exam {
             }
         }
 
-        [ShortOption('f', Parameter = OptionParameter.Optional)]
-        [LongOption("foo", Parameter = OptionParameter.Optional)]
+        [ShortOption('f'), LongOption("foo"), ParameterOptional]
         public string Foo {
             set {
                 Console.WriteLine($"foo set to {value ?? "<null>"}");
