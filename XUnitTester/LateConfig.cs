@@ -9,7 +9,7 @@ namespace XUnitTester {
             [ShortOption('a')]
             public bool A { get; set; }
 
-            [LongOption("bravo", OptionParameter.Required)]
+            [LongOption("bravo"), ParameterRequired]
             public string B { get; set; }
 
             [TailArguments]
@@ -19,10 +19,8 @@ namespace XUnitTester {
         [Fact]
         public static void LateConfigTest() {
             var parser = new CommandLineParser<TestOptions>()
-                .Config((object) new ShortOptionConfig { PrefixChar = '/' })
-                .Config<LongOptionConfig>(new LongOptionConfig { Prefix = "-" })
-                .Config<TailArgumentsCategory>((object) new TailArgumentsConfig { TailMark = "??" })
-                ;
+                .Config(new OptionConfig { ShortPrefix = '/', LongPrefix = "-" })
+                .Config<TailArgumentsCategory>(new TailArgumentsConfig { TailMark = "??" });
 
             var options = parser.Parse("/a", "-bravo=b", "??", "!!");
 

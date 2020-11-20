@@ -18,8 +18,8 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
             return 1;
         }
 
-        public IEnumerable<MemberWithAttribute<NonOptionArgumentAttribute>> Options {
-            set => _memberInfo = value.FirstOrDefault()?.Target;
+        public void SetAttributedMembers(IEnumerable<AttributedMember<NonOptionArgumentAttribute>> members) {
+            _memberInfo = members.FirstOrDefault()?.Target;
         }
     }
 }

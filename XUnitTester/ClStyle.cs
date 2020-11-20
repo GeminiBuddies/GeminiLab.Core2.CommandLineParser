@@ -6,10 +6,10 @@ using Xunit;
 
 namespace XUnitTester {
     public class ClStyleTestOptions {
-        [LongOption("OptionFirst", OptionParameter.Required)]
+        [LongOption("OptionFirst"), ParameterRequired]
         public string OptA = null;
 
-        [LongOption("S")] [LongOption("OptionSecond")]
+        [LongOption("S"), LongOption("OptionSecond")]
         public bool OptB = false;
 
         [TailArguments]
@@ -41,10 +41,11 @@ namespace XUnitTester {
             };
 
             var parser = new CommandLineParser<ClStyleTestOptions>(false)
-                .Use<LongOptionCategory>() // test duplicated component loading here
-                .Use<LongOptionCategory, LongOptionConfig>(new LongOptionConfig {
+                .Use<OptionComponent, OptionConfig>(new OptionConfig()) // test duplicated component loading here
+                .Use<OptionComponent, OptionConfig>(new OptionConfig {
+                    ShortPrefix = '\0',
+                    LongPrefix = "/",
                     ParameterDelimiter = ":",
-                    Prefix = "/",
                 })
                 .Use<UnknownOptionHandlerComponent>()
                 .Use<UnknownOptionHandlerComponent>();
