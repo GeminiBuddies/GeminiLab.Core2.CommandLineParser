@@ -7,10 +7,10 @@
     <Authors>Gemini Laboratory</Authors>
     <Company>Gemini Laboratory</Company>
     <Product>GeminiLab.Core2</Product>
-    <AssemblyVersion>2.1.0</AssemblyVersion>
+    <AssemblyVersion>3.0.0</AssemblyVersion>
     <Copyright>Copyright © Gemini Laboratory 2017 - 2020</Copyright>
-    <FileVersion>2.1.0.0</FileVersion>
-    <Version>2.1.0-dev</Version>
+    <FileVersion>3.0.0.0</FileVersion>
+    <Version>3.0.0-dev</Version>
     <LangVersion>8.0</LangVersion>
     <Configurations>Develop;Preview;Release</Configurations>
     <OutputPath>..\..\bin\$(Configuration)\</OutputPath>
