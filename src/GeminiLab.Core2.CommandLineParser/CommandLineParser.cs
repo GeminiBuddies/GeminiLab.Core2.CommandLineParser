@@ -275,7 +275,7 @@ namespace GeminiLab.Core2.CommandLineParser {
                 ptr += consumed;
             }
 
-            _hooks.ForEach(h => h.OnParsingEvent(ParsingEvent.PreParsing, rv));
+            _hooks.ForEach(h => h.OnParsingEvent(ParsingEvent.PostParsing, rv));
 
             return rv;
         }
@@ -287,6 +287,7 @@ namespace GeminiLab.Core2.CommandLineParser {
             Use<TailArgumentsCategory, TailArgumentsConfig>(new TailArgumentsConfig());
             Use<NonOptionArgumentCategory>();
 
+            Use<LifecycleHookComponent>();
             Use<UnknownOptionHandlerComponent>();
         }
 
