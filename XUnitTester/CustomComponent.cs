@@ -9,7 +9,7 @@ using Xunit;
 
 namespace XUnitTester {
     public class WowConfig {
-        public string WowInvoker { get; set; }
+        public string WowInvoker { get; set; } = WowComponent.Wow;
     }
 
     public class WowAttribute : ParsingAttribute { }
@@ -17,9 +17,9 @@ namespace XUnitTester {
     public class WowComponent : IConfigurable<WowConfig>, IOptionCategory<WowAttribute> {
         public const string Wow = "WOW";
 
-        public string WowInvoker { get; private set; }
+        public string WowInvoker { get; private set; } = Wow;
 
-        private Action<object, string> _setter;
+        private Action<object, string>? _setter = null;
 
         public void Config(WowConfig config) {
             WowInvoker = config.WowInvoker;
@@ -27,7 +27,7 @@ namespace XUnitTester {
 
         public int TryConsume(Span<string> args, object target) {
             if (args[0] == WowInvoker) {
-                _setter(target, Wow);
+                _setter?.Invoke(target, Wow);
                 return 1;
             }
 
@@ -41,7 +41,7 @@ namespace XUnitTester {
 
     public class WowOption {
         [Wow]
-        public string Wow { get; set; }
+        public string Wow { get; set; } = null!;
 
         [ShortOption('z')]
         public bool Zulu { get; set; }

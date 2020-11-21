@@ -62,9 +62,10 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
 
         private OptionParameter parameterInference(MemberInfo target) {
             var type = target switch {
-                PropertyInfo pi => pi.PropertyType,
-                FieldInfo fi    => fi.FieldType,
-                MethodInfo mi   => mi.GetParameters().Length == 0 ? typeof(bool) : mi.GetParameters()[0].ParameterType,
+                PropertyInfo pi                                  => pi.PropertyType,
+                FieldInfo fi                                     => fi.FieldType,
+                MethodInfo mi when mi.GetParameters().Length > 0 => mi.GetParameters()[0].ParameterType,
+                _                                                => typeof(bool),
             };
 
             if (type == typeof(bool)) {

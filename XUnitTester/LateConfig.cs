@@ -10,10 +10,10 @@ namespace XUnitTester {
             public bool A { get; set; }
 
             [LongOption("bravo")]
-            public string B { get; set; }
+            public string B { get; set; } = "";
 
             [TailArguments]
-            public IEnumerable<string> T { get; set; }
+            public IEnumerable<string> T { get; set; } = null!;
         }
 
         [Fact]
