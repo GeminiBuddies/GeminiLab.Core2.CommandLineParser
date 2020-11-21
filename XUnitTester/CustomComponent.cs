@@ -53,9 +53,9 @@ namespace XUnitTester {
             const string wowInvoker = "ready?";
 
             var parser = new CommandLineParser<WowOption>(false)
-                .Use<OptionComponent, OptionConfig>(new OptionConfig { ShortPrefix = '/', LongPrefix = "" })
+                .Use<OptionComponent>(new OptionConfig { ShortPrefix = '/', LongPrefix = "" })
                 .Use<WowComponent>()
-                .Config<WowComponent, WowConfig>(new WowConfig { WowInvoker = wowInvoker });
+                .Config<WowComponent>(new WowConfig { WowInvoker = wowInvoker });
 
             var wow = parser.Parse("/z", wowInvoker);
 

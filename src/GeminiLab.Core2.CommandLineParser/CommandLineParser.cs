@@ -59,7 +59,7 @@ namespace GeminiLab.Core2.CommandLineParser {
 
             return this;
         }
-        
+
         public CommandLineParser<T> Use<TComponent>()
             where TComponent : new() {
             return use(typeof(TComponent), null, null);
@@ -75,44 +75,39 @@ namespace GeminiLab.Core2.CommandLineParser {
             return use(typeof(TComponent), typeof(TConfig), config);
         }
 
-        public CommandLineParser<T> Config(object config) {
-            var componentInfo = FindComponentByConfigType(config.GetType());
-
-            if (componentInfo != null) componentInfo.Config = config;
+        private CommandLineParser<T> configByConfigType(Type configType, object? config) {
+            if (FindComponentByConfigType(configType) is {} componentInfo) componentInfo.Config = config;
 
             return this;
         }
 
-        public CommandLineParser<T> Config<TConfig>(TConfig config) {
-            var componentInfo = FindComponentByConfigType(typeof(TConfig));
+        public CommandLineParser<T> Config(object config) {
+            return configByConfigType(config.GetType(), config);
+        }
 
-            if (componentInfo != null) componentInfo.Config = config;
+        public CommandLineParser<T> Config<TConfig>(TConfig config) {
+            return configByConfigType(typeof(TConfig), config);
+        }
+
+        private CommandLineParser<T> configByComponentType(Type componentType, Type configType, object? config) {
+            if (_componentIndex.TryGetValue(componentType, out var index)) {
+                var component = _components[index];
+
+                component.ConfigType = configType;
+                component.Config = config;
+            }
 
             return this;
         }
 
         public CommandLineParser<T> Config<TComponent>(object config)
             where TComponent : new() {
-            if (_componentIndex.TryGetValue(typeof(TComponent), out var index)) {
-                var component = _components[index];
-
-                component.ConfigType = config.GetType();
-                component.Config = config;
-            }
-
-            return this;
+            return configByComponentType(typeof(TComponent), config.GetType(), config);
         }
 
         public CommandLineParser<T> Config<TComponent, TConfig>(TConfig config)
             where TComponent : IConfigurable<TConfig>, new() {
-            if (_componentIndex.TryGetValue(typeof(TComponent), out var index)) {
-                var component = _components[index];
-
-                component.ConfigType = typeof(TConfig);
-                component.Config = config;
-            }
-
-            return this;
+            return configByComponentType(typeof(TComponent), typeof(TConfig), config);
         }
 
         private List<(MemberInfo MemberInfo, ParsingAttribute Attribute)> GetAttributesFromMemberInfos(IEnumerable<MemberInfo> memberInfos) {

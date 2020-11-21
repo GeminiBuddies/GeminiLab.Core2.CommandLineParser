@@ -6,27 +6,44 @@ using Xunit;
 namespace XUnitTester {
     public class LateConfig {
         public class TestOptions {
-            [ShortOption('a')]
+            [ShortOption('a'), LongOption("a")]
             public bool A { get; set; }
 
-            [LongOption("bravo")]
+            [ShortOption('b'), LongOption("bravo"), ParameterRequired]
             public string B { get; set; } = "";
 
+            [LongOption("c"), Switch]
+            public bool C { get; set; }
+            
             [TailArguments]
             public IEnumerable<string> T { get; set; } = null!;
         }
 
         [Fact]
         public static void LateConfigTest() {
-            var parser = new CommandLineParser<TestOptions>()
-                .Config(new OptionConfig { ShortPrefix = '/', LongPrefix = "-" })
+            var parserA = new CommandLineParser<TestOptions>()
+                .Config((object) new OptionConfig { ShortPrefix = '/', LongPrefix = "-" })
                 .Config<TailArgumentsCategory>(new TailArgumentsConfig { TailMark = "??" });
 
-            var options = parser.Parse("/a", "-bravo=b", "??", "!!");
+            var parserB = new CommandLineParser<TestOptions>()
+                .Config<OptionConfig>(new OptionConfig { ShortPrefix = '-', LongPrefix = "/" })
+                .Config<TailArgumentsCategory, TailArgumentsConfig>(new TailArgumentsConfig { TailMark = "-c" });
 
-            Assert.True(options.A);
-            Assert.Equal("b", options.B);
-            Assert.Equal(new[] { "!!" }, options.T);
+            var args = new[] { "/a", "-bravo=b", "-c", "??", "!!" };
+            
+            var optionsA = parserA.Parse(args);
+
+            Assert.True(optionsA.A);
+            Assert.Equal("b", optionsA.B);
+            Assert.True(optionsA.C);
+            Assert.Equal(new[] { "!!" }, optionsA.T);
+            
+            var optionsB = parserB.Parse(args);
+
+            Assert.True(optionsB.A);
+            Assert.Equal("ravo=b", optionsB.B);
+            Assert.False(optionsB.C);
+            Assert.Equal(new[] { "??", "!!" }, optionsB.T);
         }
     }
 }
