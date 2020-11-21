@@ -75,7 +75,7 @@ namespace GeminiLab.Core2.CommandLineParser {
             return use(typeof(TComponent), typeof(TConfig), config);
         }
 
-        private CommandLineParser<T> configByConfigType(Type configType, object config) {
+        private CommandLineParser<T> configByConfigType(Type configType, object? config) {
             if (FindComponentByConfigType(configType) is {} componentInfo) componentInfo.Config = config;
 
             return this;
