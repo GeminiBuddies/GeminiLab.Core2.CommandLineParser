@@ -6,7 +6,7 @@ using Xunit;
 
 namespace XUnitTester {
     public class ClStyleTestOptions {
-        [LongOption("OptionFirst"), ParameterRequired]
+        [LongOption("OptionFirst")]
         public string OptA = null;
 
         [LongOption("S"), LongOption("OptionSecond")]

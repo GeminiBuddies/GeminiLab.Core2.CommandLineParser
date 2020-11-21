@@ -14,25 +14,30 @@ namespace XUnitTester {
             set => Logs.Enqueue($"A:{value}");
         }
 
-        [ShortOption('b')]
+        [ShortOption('b'), Switch]
         private bool OptionB {
             set => Logs.Enqueue($"B:{value}");
         }
 
-        [LongOption("bravo")]
+        [LongOption("bravo"), Switch]
         public void OptionBPlus() => Logs.Enqueue($"B:{true}");
 
         [ShortOption('c'), ParameterRequired]
         private void OptionC(string value) => Logs.Enqueue($"C:{value}");
 
         [ShortOption('d'), LongOption("delta"), ParameterOptional]
-        public string OptionD {
+        public string? OptionD {
             set => Logs.Enqueue($"D:{value ?? "default"}");
         }
 
         [ShortOption('e'), LongOption("echo"), ParameterRequired]
         private string OptionE {
             set => Logs.Enqueue($"E:{value ?? "default"}");
+        }
+
+        [ShortOption('f'), LongOption("foxtrot")]
+        private string? OptionF {
+            set => Logs.Enqueue($"F:{value ?? "default"}");
         }
 
         [NonOptionArgument]
@@ -49,7 +54,7 @@ namespace XUnitTester {
     public class DefaultStyleTestOptionB {
         public Queue<string> Logs { get; } = new Queue<string>();
 
-        [ShortOption('a'), LongOption("alpha"), ParameterRequired]
+        [ShortOption('a'), LongOption("alpha")]
         public string OptionA {
             set => Logs.Enqueue($"A:{value}");
         }
@@ -85,9 +90,9 @@ namespace XUnitTester {
 
         [Fact]
         public static void Normal() {
-            var args = new[] { "-ax", "-bc", "charlie", "--bravo", "-d", "-dd", "--delta=d", "-e", "echo", "--echo", "echo", "--echo=echo", "echo", "--", "-ax", "bravo", };
+            var args = new[] { "-ax", "-bc", "charlie", "--bravo", "-d", "-dd", "--delta=d", "-e", "echo", "--echo", "echo", "--echo=echo", "echo", "-f", "--", "-ax", "bravo", };
             var result = new CommandLineParser<DefaultStyleTestOptions>().Parse(args);
-            AssertLogQueue(result.Logs, "A:x", "B:True", "C:charlie", "B:True", "D:default", "D:d", "D:d", "E:echo", "E:echo", "E:echo", "NOA:echo", "TAIL:-ax", "TAIL:bravo");
+            AssertLogQueue(result.Logs, "A:x", "B:True", "C:charlie", "B:True", "D:default", "D:d", "D:d", "E:echo", "E:echo", "E:echo", "NOA:echo", "F:default", "TAIL:-ax", "TAIL:bravo");
         }
 
         [Fact]

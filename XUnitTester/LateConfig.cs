@@ -9,7 +9,7 @@ namespace XUnitTester {
             [ShortOption('a')]
             public bool A { get; set; }
 
-            [LongOption("bravo"), ParameterRequired]
+            [LongOption("bravo")]
             public string B { get; set; }
 
             [TailArguments]
