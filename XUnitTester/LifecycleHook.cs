@@ -18,7 +18,7 @@ namespace XUnitTester {
                 Queue.Add("post");
             }
 
-            [ShortOption('z'), ParameterRequired]
+            [ShortOption('z')]
             public void Zulu(string z) {
                 Queue.Add($"z:{z}");
             }

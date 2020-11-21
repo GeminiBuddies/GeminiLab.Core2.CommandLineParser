@@ -6,14 +6,14 @@ using Xunit;
 
 namespace XUnitTester {
     public class ClStyleTestOptions {
-        [LongOption("OptionFirst"), ParameterRequired]
-        public string OptA = null;
+        [LongOption("OptionFirst")]
+        public string OptA = "";
 
         [LongOption("S"), LongOption("OptionSecond")]
         public bool OptB = false;
 
         [TailArguments]
-        public IEnumerable<string> TailArguments { get; set; } = null;
+        public IEnumerable<string> TailArguments { get; set; } = null!;
 
         [UnknownOptionHandler]
         ExceptionHandlerResult OnUnknownOption(UnknownOptionException exception) {

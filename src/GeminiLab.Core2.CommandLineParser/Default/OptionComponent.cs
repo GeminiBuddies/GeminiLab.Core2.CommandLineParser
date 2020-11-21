@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using GeminiLab.Core2.CommandLineParser.Custom;
 using GeminiLab.Core2.CommandLineParser.Util;
 
@@ -59,6 +60,23 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
         private Dictionary<char, Option>       _optionByShort  = null!;
         private Dictionary<string, Option>     _optionByLong   = null!;
 
+        private OptionParameter parameterInference(MemberInfo target) {
+            var type = target switch {
+                PropertyInfo pi                                  => pi.PropertyType,
+                FieldInfo fi                                     => fi.FieldType,
+                MethodInfo mi when mi.GetParameters().Length > 0 => mi.GetParameters()[0].ParameterType,
+                _                                                => typeof(bool),
+            };
+
+            if (type == typeof(bool)) {
+                return OptionParameter.None;
+            } else if (target.GetCustomAttributes().Any(attr => attr.GetType().FullName == "System.Runtime.CompilerServices.NullableAttribute")) {
+                return OptionParameter.Optional;
+            } else {
+                return OptionParameter.Required;
+            }
+        }
+
         private void Initialize() {
             _initialized = true;
 
@@ -70,7 +88,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
                 if (_optionByTarget.TryGetValue(target, out var option)) {
                     _optionByShort[attribute.Option] = option;
                 } else {
-                    _optionByShort[attribute.Option] = _optionByTarget[target] = new Option(target, OptionParameter.None);
+                    _optionByShort[attribute.Option] = _optionByTarget[target] = new Option(target, parameterInference(target));
                 }
             }
 
@@ -78,7 +96,7 @@ namespace GeminiLab.Core2.CommandLineParser.Default {
                 if (_optionByTarget.TryGetValue(target, out var option)) {
                     _optionByLong[attribute.Option] = option;
                 } else {
-                    _optionByLong[attribute.Option] = _optionByTarget[target] = new Option(target, OptionParameter.None);
+                    _optionByLong[attribute.Option] = _optionByTarget[target] = new Option(target, parameterInference(target));
                 }
             }
 

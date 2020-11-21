@@ -10,13 +10,13 @@ namespace XUnitTester {
             public bool A { get; set; }
 
             [ShortOption('b'), LongOption("bravo"), ParameterRequired]
-            public string B { get; set; }
+            public string B { get; set; } = "";
 
             [LongOption("c"), Switch]
             public bool C { get; set; }
             
             [TailArguments]
-            public IEnumerable<string> T { get; set; }
+            public IEnumerable<string> T { get; set; } = null!;
         }
 
         [Fact]
